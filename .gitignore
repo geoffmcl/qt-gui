@@ -1,3 +1,6 @@
 qt-gui-build-desktop*/
 src/qt-gui.pro.user
 build-qt-gui-Desktop-Debug/*
+*.bak
+*~
+temp*
