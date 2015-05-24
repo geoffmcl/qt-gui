@@ -39,12 +39,14 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(menuBar);
 
     //menuFile = new QMenu(tr("&File"),this);
-    menuFile = new QMenu(tr("&File"),widget);
+    //menuFile = new QMenu(tr("&File"),widget);
+    menuFile = new QMenu(tr("&File"),menuBar);
     dialogAct = menuFile->addAction(tr("&Dialog"),this,SLOT(on_dialog()));
     exitAct = menuFile->addAction(tr("&Quit"),this,SLOT(on_exit()));
     menuBar->addMenu(menuFile);
 
-    menuHelp = new QMenu(tr("&Help"),this);
+    //menuHelp = new QMenu(tr("&Help"),this);
+    menuHelp = new QMenu(tr("&Help"),menuBar);
     helpAct = menuHelp->addAction(tr("&About"),this,SLOT(on_about()));
     abtqtAct = menuHelp->addAction(tr("&About Qt"),this,SLOT(on_about_qt()));
     menuBar->addMenu(menuHelp);
