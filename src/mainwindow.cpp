@@ -27,16 +27,19 @@ MainWindow::MainWindow(QWidget *parent)
     restoreGeometry(settings->value("mainWindowGeometry").toByteArray());
 
     int m = 10;
-    mainLayout = new QVBoxLayout(this);
+    //mainLayout = new QVBoxLayout(this);
+    mainLayout = new QVBoxLayout(widget);
     mainLayout->setContentsMargins(m,m,m,m);
     mainLayout->setSpacing(m);
     widget->setLayout(mainLayout);
 
     // Top MENU BAR
-    menuBar = new QMenuBar(this);
+    //menuBar = new QMenuBar(this);
+    menuBar = new QMenuBar(widget);
     mainLayout->addWidget(menuBar);
 
-    menuFile = new QMenu(tr("&File"),this);
+    //menuFile = new QMenu(tr("&File"),this);
+    menuFile = new QMenu(tr("&File"),widget);
     dialogAct = menuFile->addAction(tr("&Dialog"),this,SLOT(on_dialog()));
     exitAct = menuFile->addAction(tr("&Quit"),this,SLOT(on_exit()));
     menuBar->addMenu(menuFile);
@@ -48,16 +51,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Body of Window
     // source edit
-    sourceEdit = new QPlainTextEdit(this);
+    //sourceEdit = new QPlainTextEdit(this);
+    sourceEdit = new QPlainTextEdit(widget);
     sourceEdit->setReadOnly(true);
     mainLayout->addWidget(sourceEdit);
     // results edit
-    resultsEdit = new QPlainTextEdit(this);
+    //resultsEdit = new QPlainTextEdit(this);
+    resultsEdit = new QPlainTextEdit(widget);
     resultsEdit->setReadOnly(true);
     mainLayout->addWidget(resultsEdit);
 
     // Bottom STATUS BAR
-    statusBar = new QStatusBar(this);
+    //statusBar = new QStatusBar(this);
+    statusBar = new QStatusBar(widget);
     labelTime = new QLabel(tr("00:00:00"),this);
     labelTime->setFrameStyle(QFrame::Panel | QFrame::Raised);
     statusBar->addPermanentWidget(labelTime);
