@@ -14,3 +14,5 @@ src/*
 ipch/*
 *.sdf
 *.suo
+qt-gui
+Makefile
