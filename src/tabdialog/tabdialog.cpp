@@ -202,51 +202,94 @@ TidyTab::TidyTab(const char *xmlFile, QWidget *parent)
     : QWidget(parent)
 {
     bool failed = true;
+    bool isMisc = false;
+    bool inOption = false;
+    bool isName = false;
+    bool isType = false;
     //QXmlSimpleReader xmlReader;
     //QIODevice dev;
-    QString name;
+    QString name, error, optname, opttype;
     QFile file(xmlFile);
-    if ((QFile::exists(xmlFile)) && 
-        (file.open(QIODevice::ReadOnly))) {
+    if (QFile::exists(xmlFile)) {
+        if (file.open(QIODevice::ReadOnly)) {
 
-        //QXmlInputSource *source = new QXmlInputSource(&file);    //QLabel *fileNameLabel = new QLabel(tr("File Name:"));
-        QXmlStreamReader xml(&file);
-        while (!xml.atEnd() && !xml.hasError()) {
-            xml.readNext();
-            if (xml.error()) {
-                printf("XML error: %s\n", xml.errorString().toStdString().c_str());
-                break;
-            }
-            if (xml.isStartElement()) {
-                name = xml.name().toString();
-                //QXmlStreamAttributes attributes = xml.attributes();
-                printf("Name: %s", name.toStdString().c_str());
-                foreach(const QXmlStreamAttribute &attr, xml.attributes()) {
-                    name = attr.name().toString();
-                    QString value = attr.value().toString();
-                    printf(" %s=%s", name.toStdString().c_str(), value.toStdString().c_str());
+            //QXmlInputSource *source = new QXmlInputSource(&file);    //QLabel *fileNameLabel = new QLabel(tr("File Name:"));
+            QXmlStreamReader xml(&file);
+            while (!xml.atEnd() && !xml.hasError()) {
+                xml.readNext();
+                if (xml.error()) {
+                    printf("XML error: %s\n", xml.errorString().toStdString().c_str());
+                    break;
                 }
-                printf("\n");
-            } else if (xml.isCharacters()) {
-                if (!xml.isWhitespace()) {
-                    QString text = xml.text().toString();
-                    printf("Text: %s\n", text.toStdString().c_str());
+                if (xml.isStartElement()) {
+                    name = xml.name().toString();
+                    //QXmlStreamAttributes attributes = xml.attributes();
+                    printf("Name: %s", name.toStdString().c_str());
+                    if (name == "option") {
+                        inOption = true;
+                    } else if (inOption && (name == "name")) {
+                        isName = true;
+                    } else if (inOption && (name == "type")) {
+                        isType = true;
+                    }
+
+                    foreach(const QXmlStreamAttribute &attr, xml.attributes()) {
+                        name = attr.name().toString();
+                        QString value = attr.value().toString();
+                        printf(" %s=%s", name.toStdString().c_str(), value.toStdString().c_str());
+                        if ((name == "class") && (value == "misc")) {
+                            isMisc = true;
+                        }
+                    }
+                    printf("\n");
+                } else if (xml.isCharacters()) {
+                    if (!xml.isWhitespace()) {
+                        QString text = xml.text().toString();
+                        if (inOption && isMisc) {
+                            if (isName) {
+                                printf("OptMisc: name: %s\n", text.toStdString().c_str());
+                                optname = text; // got option name
+                            } else if (isType) {
+                                printf("OptMisc: type: %s\n", text.toStdString().c_str());
+                                opttype = text; // got option type
+                            } else {
+                                printf("miscText: %s\n", text.toStdString().c_str());
+                            }
+                        } else {
+                            printf("text: %s\n", text.toStdString().c_str());
+                        }
+                    }
+                } else if ( xml.isEndElement() ) {
+                    name = xml.name().toString();
+                    printf("End: %s\n", name.toStdString().c_str());
+                    if (name == "option") {
+                        inOption = false;
+                        isMisc = false;
+                    } else if (name == "name") {
+                        isName = false;
+                    } else if (name == "type") {
+                        isType = false;
+                    }
                 }
-            } else if ( xml.isEndElement() ) {
-                name = xml.name().toString();
-                printf("End: %s\n", name.toStdString().c_str());
             }
+            error = "xml decode not complete";
+        } else {
+            error = "Unable to open file";
         }
-
-
+    } else {
+        error = "File does NOT exist!";
     }
     if (failed) {
         QLabel *pathLabel = new QLabel(tr("File:"));
         QLabel *pathValueLabel = new QLabel(xmlFile);
         pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+        QLabel *errorLabel = new QLabel(tr("Error:"));
+        QLabel *errorValue = new QLabel(error);
         QVBoxLayout *mainLayout = new QVBoxLayout;
         mainLayout->addWidget(pathLabel);
         mainLayout->addWidget(pathValueLabel);
+        mainLayout->addWidget(errorLabel);
+        mainLayout->addWidget(errorValue);
         mainLayout->addStretch(1);
         setLayout(mainLayout);
     }
