@@ -16,3 +16,6 @@ ipch/*
 *.suo
 qt-gui
 Makefile
+qtxml-test
+tabdialog
+
