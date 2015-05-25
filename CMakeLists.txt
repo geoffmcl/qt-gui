@@ -50,8 +50,8 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LD_FLAGS}" )
 # include_directories( ${CMAKE_BINARY_DIR} )
 
 # QT = core gui
-message(STATUS "*** Finding Qt4 components COMPONENTS QtCore QtGui")
-find_package ( Qt4 COMPONENTS QtCore QtGui REQUIRED )
+message(STATUS "*** Finding Qt4 components COMPONENTS QtCore QtGui QtXml QtXmlPatterns")
+find_package ( Qt4 COMPONENTS QtCore QtGui QtXml QtXmlPatterns REQUIRED )
 include ( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 # debug messages
@@ -81,6 +81,26 @@ message(STATUS "*** inc_dirs = ${inc_dirs}")
 QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
 
 add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_OTHERS} )
+target_link_libraries( ${name} ${QT_LIBRARIES} )
+if (MSVC)
+    set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
+endif ()
+# deal with install 
+# install(TARGETS qt-gui DESTINATION bin )
+
+################################################
+### TABDIALOG SAMPLES
+set(name tabdialog)
+set(dir src/tabdialog)
+set( ${name}_SRCS
+    ${dir}/tabmain.cpp
+    ${dir}/tabdialog.cpp
+    )
+set( ${name}_HDRS
+    ${dir}/tabdialog.h
+    )
+QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
+add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} )
 target_link_libraries( ${name} ${QT_LIBRARIES} )
 if (MSVC)
     set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )

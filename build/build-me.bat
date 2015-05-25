@@ -2,7 +2,7 @@
 @set TMPBGN=%TIME%
 
 @set TMPPRJ=qt-gui
-@echo Setup for 32-bit %TMPROJ% build
+@echo Setup for 32-bit %TMPPRJ% build
 @set TMPLOG=bldlog-1.txt
 @set TMPSRC=..
 @set TMP3RD=F:\Projects\software
@@ -13,7 +13,7 @@
 @call setupqt32
 
 @call chkmsvc %TMPPRJ%
-@REM call setupqt32
+
 @REM if EXIST build-cmake.bat (
 @REM call build-cmake
 @REM if ERRORLEVEL 1 goto NOBCM
