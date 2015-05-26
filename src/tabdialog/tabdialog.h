@@ -104,4 +104,47 @@ private:
 };
 //! [3]
 
+///////////////////////////////////////////////////////
+typedef struct tabINFOSTR {
+    int count;
+}INFOSTR, *PINFOSTR;
+
+class DiagnosticsTab : public QWidget
+{
+    Q_OBJECT
+public:
+    DiagnosticsTab( PINFOSTR pinf, QWidget *parent = 0);
+};
+
+class EncodingTab : public QWidget
+{
+    Q_OBJECT
+public:
+    EncodingTab( PINFOSTR pinf, QWidget *parent = 0);
+};
+
+class MarkupTab : public QWidget
+{
+    Q_OBJECT
+public:
+    MarkupTab( PINFOSTR pinf, QWidget *parent = 0);
+};
+
+class MiscTab : public QWidget
+{
+    Q_OBJECT
+public:
+    MiscTab( PINFOSTR pinf, QWidget *parent = 0);
+};
+
+class PrintTab : public QWidget
+{
+    Q_OBJECT
+public:
+    PrintTab( PINFOSTR pinf, QWidget *parent = 0);
+};
+
+////////////////////////////////////////////////////////
+
+
 #endif

@@ -95,9 +95,11 @@ set(dir src/tabdialog)
 set( ${name}_SRCS
     ${dir}/tabmain.cpp
     ${dir}/tabdialog.cpp
+    ${dir}/tabconfig.cpp
     )
 set( ${name}_HDRS
     ${dir}/tabdialog.h
+    ${dir}/tabconfig.h
     )
 QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
 add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} )

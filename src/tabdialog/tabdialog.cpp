@@ -42,19 +42,28 @@
 #include <QXmlSimpleReader>
 #include <QIODevice>
 #include "tabdialog.h"
+#include "tabconfig.h"
+
+static INFOSTR infostr;
 
 //! [0]
 TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     : QDialog(parent)
 {
     QFileInfo fileInfo(fileName);
+    PINFOSTR pinfo = &infostr;
 
     tabWidget = new QTabWidget;
     tabWidget->addTab(new GeneralTab(fileInfo), tr("General"));
-    tabWidget->addTab(new PermissionsTab(fileInfo), tr("Permissions"));
-    tabWidget->addTab(new ApplicationsTab(fileInfo), tr("Applications"));
-    tabWidget->addTab(new TidyTab(fileName.toStdString().c_str()), tr("Tidy"));
-//! [0]
+    //tabWidget->addTab(new PermissionsTab(fileInfo), tr("Permissions"));
+    //tabWidget->addTab(new ApplicationsTab(fileInfo), tr("Applications"));
+    //tabWidget->addTab(new TidyTab(fileName.toStdString().c_str()), tr("Tidy"));
+    tabWidget->addTab(new DiagnosticsTab( pinfo ), tr("Diagnostics"));
+    tabWidget->addTab(new EncodingTab( pinfo ), tr("Encoding"));
+    tabWidget->addTab(new MarkupTab( pinfo ), tr("Markup"));
+    tabWidget->addTab(new MiscTab( pinfo ), tr("Misc"));
+    tabWidget->addTab(new PrintTab( pinfo ), tr("Print"));
+    ////////////////////////////////////////////////////////////////////////
 
 //! [1] //! [2]
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -315,3 +324,577 @@ TidyTab::TidyTab(const char *xmlFile, QWidget *parent)
 }
 //! [6]
 
+/////////////////////////////////////////////////////////////////////////
+
+DiagnosticsTab::DiagnosticsTab( PINFOSTR pinf, QWidget *parent)
+    : QWidget(parent)
+{
+    int i;
+    QString s;
+
+    QCheckBox *show_info = new QCheckBox("show-info (Boolean)");
+    if (getConfigBool("show-info")) {
+        show_info->setChecked(true);
+    }
+
+    QCheckBox *show_warnings = new QCheckBox("show-warnings (Boolean)");
+    if (getConfigBool("show-warnings")) {
+        show_warnings->setChecked(true);
+    }
+
+    QLabel *show_errors = new QLabel("show-errors (Integer)");
+    i = getConfigInt("show-errors");
+    s = QString::number(i);
+    QLineEdit *show_errorsEd = new QLineEdit(s);
+    show_errorsEd->setMaximumWidth(50);
+    QVBoxLayout *DiagnosticsLayout = new QVBoxLayout;
+    DiagnosticsLayout->addWidget(show_info);
+    DiagnosticsLayout->addWidget(show_warnings);
+    DiagnosticsLayout->addWidget(show_errors);
+    DiagnosticsLayout->addWidget(show_errorsEd);
+    DiagnosticsLayout->addStretch(1);
+    setLayout(DiagnosticsLayout);
+}
+
+EncodingTab::EncodingTab( PINFOSTR pinf, QWidget *parent)
+    : QWidget(parent)
+{
+    int i;
+    QString s;
+
+    QCheckBox *ascii_chars = new QCheckBox("ascii-chars (Boolean)");
+    if (getConfigBool("ascii-chars")) {
+        ascii_chars->setChecked(true);
+    }
+
+    QLabel *language = new QLabel("language (String)");
+    s = getConfigStg("language");
+    QLineEdit *languageEd = new QLineEdit(s);
+
+    QCheckBox *output_bom = new QCheckBox("output-bom (AutoBool)");
+    if (getConfigBool("output-bom")) {
+        output_bom->setChecked(true);
+    }
+    QVBoxLayout *EncodingLayout = new QVBoxLayout;
+    EncodingLayout->addWidget(ascii_chars);
+    EncodingLayout->addWidget(language);
+    EncodingLayout->addWidget(languageEd);
+    EncodingLayout->addWidget(output_bom);
+    EncodingLayout->addStretch(1);
+    setLayout(EncodingLayout);
+}
+
+MarkupTab::MarkupTab( PINFOSTR pinf, QWidget *parent)
+    : QWidget(parent)
+{
+    int i;
+    QString s;
+
+    QLabel *alt_text = new QLabel("alt-text (String)");
+    s = getConfigStg("alt-text");
+    QLineEdit *alt_textEd = new QLineEdit(s);
+
+    QCheckBox *coerce_endtags = new QCheckBox("coerce-endtags (Boolean)");
+    if (getConfigBool("coerce-endtags")) {
+        coerce_endtags->setChecked(true);
+    }
+
+    QCheckBox *omit_optional_tags = new QCheckBox("omit-optional-tags (Boolean)");
+    if (getConfigBool("omit-optional-tags")) {
+        omit_optional_tags->setChecked(true);
+    }
+
+    QCheckBox *hide_endtags = new QCheckBox("hide-endtags (Boolean)");
+    if (getConfigBool("hide-endtags")) {
+        hide_endtags->setChecked(true);
+    }
+
+    QCheckBox *input_xml = new QCheckBox("input-xml (Boolean)");
+    if (getConfigBool("input-xml")) {
+        input_xml->setChecked(true);
+    }
+
+    QCheckBox *output_xml = new QCheckBox("output-xml (Boolean)");
+    if (getConfigBool("output-xml")) {
+        output_xml->setChecked(true);
+    }
+
+    QCheckBox *output_xhtml = new QCheckBox("output-xhtml (Boolean)");
+    if (getConfigBool("output-xhtml")) {
+        output_xhtml->setChecked(true);
+    }
+
+    QCheckBox *output_html = new QCheckBox("output-html (Boolean)");
+    if (getConfigBool("output-html")) {
+        output_html->setChecked(true);
+    }
+
+    QCheckBox *add_xml_decl = new QCheckBox("add-xml-decl (Boolean)");
+    if (getConfigBool("add-xml-decl")) {
+        add_xml_decl->setChecked(true);
+    }
+
+    QCheckBox *uppercase_tags = new QCheckBox("uppercase-tags (Boolean)");
+    if (getConfigBool("uppercase-tags")) {
+        uppercase_tags->setChecked(true);
+    }
+
+    QCheckBox *uppercase_attributes = new QCheckBox("uppercase-attributes (Boolean)");
+    if (getConfigBool("uppercase-attributes")) {
+        uppercase_attributes->setChecked(true);
+    }
+
+    QCheckBox *bare = new QCheckBox("bare (Boolean)");
+    if (getConfigBool("bare")) {
+        bare->setChecked(true);
+    }
+
+    QCheckBox *clean = new QCheckBox("clean (Boolean)");
+    if (getConfigBool("clean")) {
+        clean->setChecked(true);
+    }
+
+    QCheckBox *gdoc = new QCheckBox("gdoc (Boolean)");
+    if (getConfigBool("gdoc")) {
+        gdoc->setChecked(true);
+    }
+
+    QCheckBox *logical_emphasis = new QCheckBox("logical-emphasis (Boolean)");
+    if (getConfigBool("logical-emphasis")) {
+        logical_emphasis->setChecked(true);
+    }
+
+    QCheckBox *drop_proprietary_attributes = new QCheckBox("drop-proprietary-attributes (Boolean)");
+    if (getConfigBool("drop-proprietary-attributes")) {
+        drop_proprietary_attributes->setChecked(true);
+    }
+
+    QCheckBox *drop_font_tags = new QCheckBox("drop-font-tags (Boolean)");
+    if (getConfigBool("drop-font-tags")) {
+        drop_font_tags->setChecked(true);
+    }
+
+    QCheckBox *drop_empty_elements = new QCheckBox("drop-empty-elements (Boolean)");
+    if (getConfigBool("drop-empty-elements")) {
+        drop_empty_elements->setChecked(true);
+    }
+
+    QCheckBox *drop_empty_paras = new QCheckBox("drop-empty-paras (Boolean)");
+    if (getConfigBool("drop-empty-paras")) {
+        drop_empty_paras->setChecked(true);
+    }
+
+    QCheckBox *fix_bad_comments = new QCheckBox("fix-bad-comments (Boolean)");
+    if (getConfigBool("fix-bad-comments")) {
+        fix_bad_comments->setChecked(true);
+    }
+
+    QCheckBox *numeric_entities = new QCheckBox("numeric-entities (Boolean)");
+    if (getConfigBool("numeric-entities")) {
+        numeric_entities->setChecked(true);
+    }
+
+    QCheckBox *quote_marks = new QCheckBox("quote-marks (Boolean)");
+    if (getConfigBool("quote-marks")) {
+        quote_marks->setChecked(true);
+    }
+
+    QCheckBox *quote_nbsp = new QCheckBox("quote-nbsp (Boolean)");
+    if (getConfigBool("quote-nbsp")) {
+        quote_nbsp->setChecked(true);
+    }
+
+    QCheckBox *quote_ampersand = new QCheckBox("quote-ampersand (Boolean)");
+    if (getConfigBool("quote-ampersand")) {
+        quote_ampersand->setChecked(true);
+    }
+
+    QCheckBox *fix_backslash = new QCheckBox("fix-backslash (Boolean)");
+    if (getConfigBool("fix-backslash")) {
+        fix_backslash->setChecked(true);
+    }
+
+    QCheckBox *assume_xml_procins = new QCheckBox("assume-xml-procins (Boolean)");
+    if (getConfigBool("assume-xml-procins")) {
+        assume_xml_procins->setChecked(true);
+    }
+
+    QCheckBox *add_xml_space = new QCheckBox("add-xml-space (Boolean)");
+    if (getConfigBool("add-xml-space")) {
+        add_xml_space->setChecked(true);
+    }
+
+    QCheckBox *enclose_text = new QCheckBox("enclose-text (Boolean)");
+    if (getConfigBool("enclose-text")) {
+        enclose_text->setChecked(true);
+    }
+
+    QCheckBox *enclose_block_text = new QCheckBox("enclose-block-text (Boolean)");
+    if (getConfigBool("enclose-block-text")) {
+        enclose_block_text->setChecked(true);
+    }
+
+    QCheckBox *word_2000 = new QCheckBox("word-2000 (Boolean)");
+    if (getConfigBool("word-2000")) {
+        word_2000->setChecked(true);
+    }
+
+    QCheckBox *literal_attributes = new QCheckBox("literal-attributes (Boolean)");
+    if (getConfigBool("literal-attributes")) {
+        literal_attributes->setChecked(true);
+    }
+
+    QCheckBox *show_body_only = new QCheckBox("show-body-only (AutoBool)");
+    if (getConfigBool("show-body-only")) {
+        show_body_only->setChecked(true);
+    }
+
+    QCheckBox *fix_uri = new QCheckBox("fix-uri (Boolean)");
+    if (getConfigBool("fix-uri")) {
+        fix_uri->setChecked(true);
+    }
+
+    QCheckBox *lower_literals = new QCheckBox("lower-literals (Boolean)");
+    if (getConfigBool("lower-literals")) {
+        lower_literals->setChecked(true);
+    }
+
+    QCheckBox *hide_comments = new QCheckBox("hide-comments (Boolean)");
+    if (getConfigBool("hide-comments")) {
+        hide_comments->setChecked(true);
+    }
+
+    QCheckBox *indent_cdata = new QCheckBox("indent-cdata (Boolean)");
+    if (getConfigBool("indent-cdata")) {
+        indent_cdata->setChecked(true);
+    }
+
+    QCheckBox *join_classes = new QCheckBox("join-classes (Boolean)");
+    if (getConfigBool("join-classes")) {
+        join_classes->setChecked(true);
+    }
+
+    QCheckBox *join_styles = new QCheckBox("join-styles (Boolean)");
+    if (getConfigBool("join-styles")) {
+        join_styles->setChecked(true);
+    }
+
+    QCheckBox *escape_cdata = new QCheckBox("escape-cdata (Boolean)");
+    if (getConfigBool("escape-cdata")) {
+        escape_cdata->setChecked(true);
+    }
+
+    QCheckBox *ncr = new QCheckBox("ncr (Boolean)");
+    if (getConfigBool("ncr")) {
+        ncr->setChecked(true);
+    }
+
+    QCheckBox *replace_color = new QCheckBox("replace-color (Boolean)");
+    if (getConfigBool("replace-color")) {
+        replace_color->setChecked(true);
+    }
+
+    QLabel *css_prefix = new QLabel("css-prefix (String)");
+    s = getConfigStg("css-prefix");
+    QLineEdit *css_prefixEd = new QLineEdit(s);
+
+    QLabel *new_inline_tags = new QLabel("new-inline-tags (String)");
+    s = getConfigStg("new-inline-tags");
+    QLineEdit *new_inline_tagsEd = new QLineEdit(s);
+
+    QLabel *new_blocklevel_tags = new QLabel("new-blocklevel-tags (String)");
+    s = getConfigStg("new-blocklevel-tags");
+    QLineEdit *new_blocklevel_tagsEd = new QLineEdit(s);
+
+    QLabel *new_empty_tags = new QLabel("new-empty-tags (String)");
+    s = getConfigStg("new-empty-tags");
+    QLineEdit *new_empty_tagsEd = new QLineEdit(s);
+
+    QLabel *new_pre_tags = new QLabel("new-pre-tags (String)");
+    s = getConfigStg("new-pre-tags");
+    QLineEdit *new_pre_tagsEd = new QLineEdit(s);
+
+    QCheckBox *merge_emphasis = new QCheckBox("merge-emphasis (Boolean)");
+    if (getConfigBool("merge-emphasis")) {
+        merge_emphasis->setChecked(true);
+    }
+
+    QCheckBox *merge_divs = new QCheckBox("merge-divs (AutoBool)");
+    if (getConfigBool("merge-divs")) {
+        merge_divs->setChecked(true);
+    }
+
+    QCheckBox *decorate_inferred_ul = new QCheckBox("decorate-inferred-ul (Boolean)");
+    if (getConfigBool("decorate-inferred-ul")) {
+        decorate_inferred_ul->setChecked(true);
+    }
+
+    QCheckBox *preserve_entities = new QCheckBox("preserve-entities (Boolean)");
+    if (getConfigBool("preserve-entities")) {
+        preserve_entities->setChecked(true);
+    }
+
+    QCheckBox *merge_spans = new QCheckBox("merge-spans (AutoBool)");
+    if (getConfigBool("merge-spans")) {
+        merge_spans->setChecked(true);
+    }
+
+    QCheckBox *anchor_as_name = new QCheckBox("anchor-as-name (Boolean)");
+    if (getConfigBool("anchor-as-name")) {
+        anchor_as_name->setChecked(true);
+    }
+    QVBoxLayout *MarkupLayout1 = new QVBoxLayout;
+    MarkupLayout1->addWidget(alt_text);
+    MarkupLayout1->addWidget(alt_textEd);
+    MarkupLayout1->addWidget(coerce_endtags);
+    MarkupLayout1->addWidget(omit_optional_tags);
+    MarkupLayout1->addWidget(hide_endtags);
+    MarkupLayout1->addWidget(input_xml);
+    MarkupLayout1->addWidget(output_xml);
+    MarkupLayout1->addWidget(output_xhtml);
+    MarkupLayout1->addWidget(output_html);
+    MarkupLayout1->addWidget(add_xml_decl);
+    MarkupLayout1->addWidget(uppercase_tags);
+    MarkupLayout1->addWidget(uppercase_attributes);
+    MarkupLayout1->addWidget(bare);
+    MarkupLayout1->addWidget(clean);
+    MarkupLayout1->addWidget(gdoc);
+    MarkupLayout1->addWidget(logical_emphasis);
+    MarkupLayout1->addWidget(drop_proprietary_attributes);
+    MarkupLayout1->addWidget(drop_font_tags);
+    MarkupLayout1->addWidget(drop_empty_elements);
+    MarkupLayout1->addWidget(drop_empty_paras);
+    MarkupLayout1->addWidget(fix_bad_comments);
+    MarkupLayout1->addWidget(numeric_entities);
+    MarkupLayout1->addWidget(quote_marks);
+    MarkupLayout1->addWidget(quote_nbsp);
+    MarkupLayout1->addWidget(quote_ampersand);
+    MarkupLayout1->addWidget(fix_backslash);
+    MarkupLayout1->addWidget(assume_xml_procins);
+    MarkupLayout1->addWidget(add_xml_space);
+    MarkupLayout1->addWidget(enclose_text);
+    QVBoxLayout *MarkupLayout2 = new QVBoxLayout;
+    MarkupLayout2->addWidget(enclose_block_text);
+    MarkupLayout2->addWidget(word_2000);
+    MarkupLayout2->addWidget(literal_attributes);
+    MarkupLayout2->addWidget(show_body_only);
+    MarkupLayout2->addWidget(fix_uri);
+    MarkupLayout2->addWidget(lower_literals);
+    MarkupLayout2->addWidget(hide_comments);
+    MarkupLayout2->addWidget(indent_cdata);
+    MarkupLayout2->addWidget(join_classes);
+    MarkupLayout2->addWidget(join_styles);
+    MarkupLayout2->addWidget(escape_cdata);
+    MarkupLayout2->addWidget(ncr);
+    MarkupLayout2->addWidget(replace_color);
+    MarkupLayout2->addWidget(css_prefix);
+    MarkupLayout2->addWidget(css_prefixEd);
+    MarkupLayout2->addWidget(new_inline_tags);
+    MarkupLayout2->addWidget(new_inline_tagsEd);
+    MarkupLayout2->addWidget(new_blocklevel_tags);
+    MarkupLayout2->addWidget(new_blocklevel_tagsEd);
+    MarkupLayout2->addWidget(new_empty_tags);
+    MarkupLayout2->addWidget(new_empty_tagsEd);
+    MarkupLayout2->addWidget(new_pre_tags);
+    MarkupLayout2->addWidget(new_pre_tagsEd);
+    MarkupLayout2->addWidget(merge_emphasis);
+    MarkupLayout2->addWidget(merge_divs);
+    MarkupLayout2->addWidget(decorate_inferred_ul);
+    MarkupLayout2->addWidget(preserve_entities);
+    MarkupLayout2->addWidget(merge_spans);
+    MarkupLayout2->addWidget(anchor_as_name);
+    QHBoxLayout *MarkupLayout = new QHBoxLayout;
+    MarkupLayout->addLayout(MarkupLayout1);
+    MarkupLayout->addLayout(MarkupLayout2);
+    setLayout(MarkupLayout);
+}
+
+MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
+    : QWidget(parent)
+{
+    int i;
+    QString s;
+
+    QLabel *slide_style = new QLabel("slide-style (String)");
+    s = getConfigStg("slide-style");
+    QLineEdit *slide_styleEd = new QLineEdit(s);
+
+    QLabel *error_file = new QLabel("error-file (String)");
+    s = getConfigStg("error-file");
+    QLineEdit *error_fileEd = new QLineEdit(s);
+
+    QLabel *output_file = new QLabel("output-file (String)");
+    s = getConfigStg("output-file");
+    QLineEdit *output_fileEd = new QLineEdit(s);
+
+    QCheckBox *write_back = new QCheckBox("write-back (Boolean)");
+    if (getConfigBool("write-back")) {
+        write_back->setChecked(true);
+    }
+
+    QCheckBox *quiet = new QCheckBox("quiet (Boolean)");
+    if (getConfigBool("quiet")) {
+        quiet->setChecked(true);
+    }
+
+    QCheckBox *keep_time = new QCheckBox("keep-time (Boolean)");
+    if (getConfigBool("keep-time")) {
+        keep_time->setChecked(true);
+    }
+
+    QCheckBox *tidy_mark = new QCheckBox("tidy-mark (Boolean)");
+    if (getConfigBool("tidy-mark")) {
+        tidy_mark->setChecked(true);
+    }
+
+    QCheckBox *gnu_emacs = new QCheckBox("gnu-emacs (Boolean)");
+    if (getConfigBool("gnu-emacs")) {
+        gnu_emacs->setChecked(true);
+    }
+
+    QLabel *gnu_emacs_file = new QLabel("gnu-emacs-file (String)");
+    s = getConfigStg("gnu-emacs-file");
+    QLineEdit *gnu_emacs_fileEd = new QLineEdit(s);
+
+    QCheckBox *force_output = new QCheckBox("force-output (Boolean)");
+    if (getConfigBool("force-output")) {
+        force_output->setChecked(true);
+    }
+    QVBoxLayout *MiscLayout = new QVBoxLayout;
+    MiscLayout->addWidget(slide_style);
+    MiscLayout->addWidget(slide_styleEd);
+    MiscLayout->addWidget(error_file);
+    MiscLayout->addWidget(error_fileEd);
+    MiscLayout->addWidget(output_file);
+    MiscLayout->addWidget(output_fileEd);
+    MiscLayout->addWidget(write_back);
+    MiscLayout->addWidget(quiet);
+    MiscLayout->addWidget(keep_time);
+    MiscLayout->addWidget(tidy_mark);
+    MiscLayout->addWidget(gnu_emacs);
+    MiscLayout->addWidget(gnu_emacs_file);
+    MiscLayout->addWidget(gnu_emacs_fileEd);
+    MiscLayout->addWidget(force_output);
+    MiscLayout->addStretch(1);
+    setLayout(MiscLayout);
+}
+
+PrintTab::PrintTab( PINFOSTR pinf, QWidget *parent)
+    : QWidget(parent)
+{
+    int i;
+    QString s;
+
+    QLabel *indent_spaces = new QLabel("indent-spaces (Integer)");
+    i = getConfigInt("indent-spaces");
+    s = QString::number(i);
+    QLineEdit *indent_spacesEd = new QLineEdit(s);
+    indent_spacesEd->setMaximumWidth(50);
+
+    QLabel *wrap = new QLabel("wrap (Integer)");
+    i = getConfigInt("wrap");
+    s = QString::number(i);
+    QLineEdit *wrapEd = new QLineEdit(s);
+    wrapEd->setMaximumWidth(50);
+
+    QLabel *tab_size = new QLabel("tab-size (Integer)");
+    i = getConfigInt("tab-size");
+    s = QString::number(i);
+    QLineEdit *tab_sizeEd = new QLineEdit(s);
+    tab_sizeEd->setMaximumWidth(50);
+
+    QCheckBox *markup = new QCheckBox("markup (Boolean)");
+    if (getConfigBool("markup")) {
+        markup->setChecked(true);
+    }
+
+    QCheckBox *indent = new QCheckBox("indent (AutoBool)");
+    if (getConfigBool("indent")) {
+        indent->setChecked(true);
+    }
+
+    QCheckBox *break_before_br = new QCheckBox("break-before-br (Boolean)");
+    if (getConfigBool("break-before-br")) {
+        break_before_br->setChecked(true);
+    }
+
+    QCheckBox *split = new QCheckBox("split (Boolean)");
+    if (getConfigBool("split")) {
+        split->setChecked(true);
+    }
+
+    QCheckBox *wrap_attributes = new QCheckBox("wrap-attributes (Boolean)");
+    if (getConfigBool("wrap-attributes")) {
+        wrap_attributes->setChecked(true);
+    }
+
+    QCheckBox *wrap_script_literals = new QCheckBox("wrap-script-literals (Boolean)");
+    if (getConfigBool("wrap-script-literals")) {
+        wrap_script_literals->setChecked(true);
+    }
+
+    QCheckBox *wrap_sections = new QCheckBox("wrap-sections (Boolean)");
+    if (getConfigBool("wrap-sections")) {
+        wrap_sections->setChecked(true);
+    }
+
+    QCheckBox *wrap_asp = new QCheckBox("wrap-asp (Boolean)");
+    if (getConfigBool("wrap-asp")) {
+        wrap_asp->setChecked(true);
+    }
+
+    QCheckBox *wrap_jste = new QCheckBox("wrap-jste (Boolean)");
+    if (getConfigBool("wrap-jste")) {
+        wrap_jste->setChecked(true);
+    }
+
+    QCheckBox *wrap_php = new QCheckBox("wrap-php (Boolean)");
+    if (getConfigBool("wrap-php")) {
+        wrap_php->setChecked(true);
+    }
+
+    QCheckBox *indent_attributes = new QCheckBox("indent-attributes (Boolean)");
+    if (getConfigBool("indent-attributes")) {
+        indent_attributes->setChecked(true);
+    }
+
+    QCheckBox *vertical_space = new QCheckBox("vertical-space (Boolean)");
+    if (getConfigBool("vertical-space")) {
+        vertical_space->setChecked(true);
+    }
+
+    QCheckBox *punctuation_wrap = new QCheckBox("punctuation-wrap (Boolean)");
+    if (getConfigBool("punctuation-wrap")) {
+        punctuation_wrap->setChecked(true);
+    }
+
+    QCheckBox *indent_with_tabs = new QCheckBox("indent-with-tabs (Boolean)");
+    if (getConfigBool("indent-with-tabs")) {
+        indent_with_tabs->setChecked(true);
+    }
+    QVBoxLayout *PrintLayout = new QVBoxLayout;
+    PrintLayout->addWidget(indent_spaces);
+    PrintLayout->addWidget(indent_spacesEd);
+    PrintLayout->addWidget(wrap);
+    PrintLayout->addWidget(wrapEd);
+    PrintLayout->addWidget(tab_size);
+    PrintLayout->addWidget(tab_sizeEd);
+    PrintLayout->addWidget(markup);
+    PrintLayout->addWidget(indent);
+    PrintLayout->addWidget(break_before_br);
+    PrintLayout->addWidget(split);
+    PrintLayout->addWidget(wrap_attributes);
+    PrintLayout->addWidget(wrap_script_literals);
+    PrintLayout->addWidget(wrap_sections);
+    PrintLayout->addWidget(wrap_asp);
+    PrintLayout->addWidget(wrap_jste);
+    PrintLayout->addWidget(wrap_php);
+    PrintLayout->addWidget(indent_attributes);
+    PrintLayout->addWidget(vertical_space);
+    PrintLayout->addWidget(punctuation_wrap);
+    PrintLayout->addWidget(indent_with_tabs);
+    PrintLayout->addStretch(1);
+    setLayout(PrintLayout);
+}
+
+/////////////////////////////////////////////////////////////////////////
