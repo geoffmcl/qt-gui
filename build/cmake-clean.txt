@@ -1,1 +1,6 @@
 bldlog-1.txt
+qt-gui
+qtxml-test
+src
+tabdialog
+
