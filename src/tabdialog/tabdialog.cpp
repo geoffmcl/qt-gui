@@ -347,11 +347,28 @@ DiagnosticsTab::DiagnosticsTab( PINFOSTR pinf, QWidget *parent)
     s = QString::number(i);
     QLineEdit *show_errorsEd = new QLineEdit(s);
     show_errorsEd->setMaximumWidth(50);
+
+    QGroupBox *accessibility_check = new QGroupBox("accessibility-check");
+    QComboBox *accessibility_checkComb = new QComboBox();
+    accessibility_checkComb->addItem("0 (Tidy Classic)","0 (Tidy Classic)");
+    accessibility_checkComb->addItem("1 (Priority 1 Checks)","1 (Priority 1 Checks)");
+    accessibility_checkComb->addItem("2 (Priority 2 Checks)","2 (Priority 2 Checks)");
+    accessibility_checkComb->addItem("3 (Priority 3 Checks)","3 (Priority 3 Checks)");
+    s = getConfigEnc("accessibility-check");
+    i = accessibility_checkComb->findData(s);
+    if (i != -1) {
+        accessibility_checkComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *accessibility_checkLay = new QVBoxLayout;
+    accessibility_checkLay->addWidget(accessibility_checkComb);
+    accessibility_checkLay->addStretch(1);
+    accessibility_check->setLayout(accessibility_checkLay);
     QVBoxLayout *DiagnosticsLayout = new QVBoxLayout;
     DiagnosticsLayout->addWidget(show_info);
     DiagnosticsLayout->addWidget(show_warnings);
     DiagnosticsLayout->addWidget(show_errors);
     DiagnosticsLayout->addWidget(show_errorsEd);
+    DiagnosticsLayout->addWidget(accessibility_check);
     DiagnosticsLayout->addStretch(1);
     setLayout(DiagnosticsLayout);
 }
@@ -361,6 +378,131 @@ EncodingTab::EncodingTab( PINFOSTR pinf, QWidget *parent)
 {
     int i;
     QString s;
+
+    QGroupBox *char_encoding = new QGroupBox("char-encoding");
+    QComboBox *char_encodingComb = new QComboBox();
+    char_encodingComb->addItem("raw","raw");
+    char_encodingComb->addItem("ascii","ascii");
+    char_encodingComb->addItem("latin0","latin0");
+    char_encodingComb->addItem("latin1","latin1");
+    char_encodingComb->addItem("utf8","utf8");
+    char_encodingComb->addItem("iso2022","iso2022");
+    char_encodingComb->addItem("mac","mac");
+    char_encodingComb->addItem("win1252","win1252");
+    char_encodingComb->addItem("ibm858","ibm858");
+    char_encodingComb->addItem("utf16le","utf16le");
+    char_encodingComb->addItem("utf16be","utf16be");
+    char_encodingComb->addItem("utf16","utf16");
+    char_encodingComb->addItem("big5","big5");
+    char_encodingComb->addItem("shiftjis","shiftjis");
+    s = getConfigEnc("char-encoding");
+    i = char_encodingComb->findData(s);
+    if (i != -1) {
+        char_encodingComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *char_encodingLay = new QVBoxLayout;
+    char_encodingLay->addWidget(char_encodingComb);
+    char_encodingLay->addStretch(1);
+    char_encoding->setLayout(char_encodingLay);
+
+    QGroupBox *input_encoding = new QGroupBox("input-encoding");
+    QComboBox *input_encodingComb = new QComboBox();
+    input_encodingComb->addItem("raw","raw");
+    input_encodingComb->addItem("ascii","ascii");
+    input_encodingComb->addItem("latin0","latin0");
+    input_encodingComb->addItem("latin1","latin1");
+    input_encodingComb->addItem("utf8","utf8");
+    input_encodingComb->addItem("iso2022","iso2022");
+    input_encodingComb->addItem("mac","mac");
+    input_encodingComb->addItem("win1252","win1252");
+    input_encodingComb->addItem("ibm858","ibm858");
+    input_encodingComb->addItem("utf16le","utf16le");
+    input_encodingComb->addItem("utf16be","utf16be");
+    input_encodingComb->addItem("utf16","utf16");
+    input_encodingComb->addItem("big5","big5");
+    input_encodingComb->addItem("shiftjis","shiftjis");
+    s = getConfigEnc("input-encoding");
+    i = input_encodingComb->findData(s);
+    if (i != -1) {
+        input_encodingComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *input_encodingLay = new QVBoxLayout;
+    input_encodingLay->addWidget(input_encodingComb);
+    input_encodingLay->addStretch(1);
+    input_encoding->setLayout(input_encodingLay);
+
+    QGroupBox *output_encoding = new QGroupBox("output-encoding");
+    QComboBox *output_encodingComb = new QComboBox();
+    output_encodingComb->addItem("raw","raw");
+    output_encodingComb->addItem("ascii","ascii");
+    output_encodingComb->addItem("latin0","latin0");
+    output_encodingComb->addItem("latin1","latin1");
+    output_encodingComb->addItem("utf8","utf8");
+    output_encodingComb->addItem("iso2022","iso2022");
+    output_encodingComb->addItem("mac","mac");
+    output_encodingComb->addItem("win1252","win1252");
+    output_encodingComb->addItem("ibm858","ibm858");
+    output_encodingComb->addItem("utf16le","utf16le");
+    output_encodingComb->addItem("utf16be","utf16be");
+    output_encodingComb->addItem("utf16","utf16");
+    output_encodingComb->addItem("big5","big5");
+    output_encodingComb->addItem("shiftjis","shiftjis");
+    s = getConfigEnc("output-encoding");
+    i = output_encodingComb->findData(s);
+    if (i != -1) {
+        output_encodingComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *output_encodingLay = new QVBoxLayout;
+    output_encodingLay->addWidget(output_encodingComb);
+    output_encodingLay->addStretch(1);
+    output_encoding->setLayout(output_encodingLay);
+
+    QGroupBox *newline = new QGroupBox("newline");
+    QComboBox *newlineComb = new QComboBox();
+    newlineComb->addItem("LF","LF");
+    newlineComb->addItem("CRLF","CRLF");
+    newlineComb->addItem("CR","CR");
+    s = getConfigEnc("newline");
+    i = newlineComb->findData(s);
+    if (i != -1) {
+        newlineComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *newlineLay = new QVBoxLayout;
+    newlineLay->addWidget(newlineComb);
+    newlineLay->addStretch(1);
+    newline->setLayout(newlineLay);
+
+    QGroupBox *doctype = new QGroupBox("doctype");
+    QComboBox *doctypeComb = new QComboBox();
+    doctypeComb->addItem("html5","html5");
+    doctypeComb->addItem("omit","omit");
+    doctypeComb->addItem("auto","auto");
+    doctypeComb->addItem("strict","strict");
+    doctypeComb->addItem("transitional","transitional");
+    doctypeComb->addItem("user","user");
+    s = getConfigEnc("doctype");
+    i = doctypeComb->findData(s);
+    if (i != -1) {
+        doctypeComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *doctypeLay = new QVBoxLayout;
+    doctypeLay->addWidget(doctypeComb);
+    doctypeLay->addStretch(1);
+    doctype->setLayout(doctypeLay);
+
+    QGroupBox *repeated_attributes = new QGroupBox("repeated-attributes");
+    QComboBox *repeated_attributesComb = new QComboBox();
+    repeated_attributesComb->addItem("keep-first","keep-first");
+    repeated_attributesComb->addItem("keep-last","keep-last");
+    s = getConfigEnc("repeated-attributes");
+    i = repeated_attributesComb->findData(s);
+    if (i != -1) {
+        repeated_attributesComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *repeated_attributesLay = new QVBoxLayout;
+    repeated_attributesLay->addWidget(repeated_attributesComb);
+    repeated_attributesLay->addStretch(1);
+    repeated_attributes->setLayout(repeated_attributesLay);
 
     QCheckBox *ascii_chars = new QCheckBox("ascii-chars (Boolean)");
     if (getConfigBool("ascii-chars")) {
@@ -376,6 +518,12 @@ EncodingTab::EncodingTab( PINFOSTR pinf, QWidget *parent)
         output_bom->setChecked(true);
     }
     QVBoxLayout *EncodingLayout = new QVBoxLayout;
+    EncodingLayout->addWidget(char_encoding);
+    EncodingLayout->addWidget(input_encoding);
+    EncodingLayout->addWidget(output_encoding);
+    EncodingLayout->addWidget(newline);
+    EncodingLayout->addWidget(doctype);
+    EncodingLayout->addWidget(repeated_attributes);
     EncodingLayout->addWidget(ascii_chars);
     EncodingLayout->addWidget(language);
     EncodingLayout->addWidget(languageEd);
@@ -389,10 +537,6 @@ MarkupTab::MarkupTab( PINFOSTR pinf, QWidget *parent)
 {
     int i;
     QString s;
-
-    QLabel *alt_text = new QLabel("alt-text (String)");
-    s = getConfigStg("alt-text");
-    QLineEdit *alt_textEd = new QLineEdit(s);
 
     QCheckBox *coerce_endtags = new QCheckBox("coerce-endtags (Boolean)");
     if (getConfigBool("coerce-endtags")) {
@@ -644,8 +788,6 @@ MarkupTab::MarkupTab( PINFOSTR pinf, QWidget *parent)
         anchor_as_name->setChecked(true);
     }
     QVBoxLayout *MarkupLayout1 = new QVBoxLayout;
-    MarkupLayout1->addWidget(alt_text);
-    MarkupLayout1->addWidget(alt_textEd);
     MarkupLayout1->addWidget(coerce_endtags);
     MarkupLayout1->addWidget(omit_optional_tags);
     MarkupLayout1->addWidget(hide_endtags);
@@ -673,8 +815,8 @@ MarkupTab::MarkupTab( PINFOSTR pinf, QWidget *parent)
     MarkupLayout1->addWidget(assume_xml_procins);
     MarkupLayout1->addWidget(add_xml_space);
     MarkupLayout1->addWidget(enclose_text);
+    MarkupLayout1->addWidget(enclose_block_text);
     QVBoxLayout *MarkupLayout2 = new QVBoxLayout;
-    MarkupLayout2->addWidget(enclose_block_text);
     MarkupLayout2->addWidget(word_2000);
     MarkupLayout2->addWidget(literal_attributes);
     MarkupLayout2->addWidget(show_body_only);
@@ -714,6 +856,10 @@ MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
 {
     int i;
     QString s;
+
+    QLabel *alt_text = new QLabel("alt-text (String)");
+    s = getConfigStg("alt-text");
+    QLineEdit *alt_textEd = new QLineEdit(s);
 
     QLabel *slide_style = new QLabel("slide-style (String)");
     s = getConfigStg("slide-style");
@@ -761,6 +907,8 @@ MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
         force_output->setChecked(true);
     }
     QVBoxLayout *MiscLayout = new QVBoxLayout;
+    MiscLayout->addWidget(alt_text);
+    MiscLayout->addWidget(alt_textEd);
     MiscLayout->addWidget(slide_style);
     MiscLayout->addWidget(slide_styleEd);
     MiscLayout->addWidget(error_file);
@@ -868,6 +1016,20 @@ PrintTab::PrintTab( PINFOSTR pinf, QWidget *parent)
         punctuation_wrap->setChecked(true);
     }
 
+    QGroupBox *sort_attributes = new QGroupBox("sort-attributes");
+    QComboBox *sort_attributesComb = new QComboBox();
+    sort_attributesComb->addItem("none","none");
+    sort_attributesComb->addItem("alpha","alpha");
+    s = getConfigEnc("sort-attributes");
+    i = sort_attributesComb->findData(s);
+    if (i != -1) {
+        sort_attributesComb->setCurrentIndex(i);
+    }
+    QVBoxLayout *sort_attributesLay = new QVBoxLayout;
+    sort_attributesLay->addWidget(sort_attributesComb);
+    sort_attributesLay->addStretch(1);
+    sort_attributes->setLayout(sort_attributesLay);
+
     QCheckBox *indent_with_tabs = new QCheckBox("indent-with-tabs (Boolean)");
     if (getConfigBool("indent-with-tabs")) {
         indent_with_tabs->setChecked(true);
@@ -892,9 +1054,9 @@ PrintTab::PrintTab( PINFOSTR pinf, QWidget *parent)
     PrintLayout->addWidget(indent_attributes);
     PrintLayout->addWidget(vertical_space);
     PrintLayout->addWidget(punctuation_wrap);
+    PrintLayout->addWidget(sort_attributes);
     PrintLayout->addWidget(indent_with_tabs);
     PrintLayout->addStretch(1);
     setLayout(PrintLayout);
 }
-
 /////////////////////////////////////////////////////////////////////////

@@ -13,7 +13,7 @@
 extern bool getConfigBool( const char *item );
 extern int getConfigInt( const char *item );
 extern const char *getConfigStg( const char *item );
-
+extern const char *getConfigEnc( const char *item );
 
 #endif // #ifndef _TABCONFIG_H_
 // eof - tabconfig.h

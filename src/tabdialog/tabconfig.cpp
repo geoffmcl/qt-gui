@@ -39,4 +39,20 @@ const char *getConfigStg( const char *item )
     return "";
 }
 
+const char *getConfigEnc( const char *item )
+{
+    if (strcmp(item,"char-encoding") == 0) {
+        return "utf8";
+    } else if (strcmp(item,"input-encoding") == 0) {
+        return "utf8";
+    } else if (strcmp(item,"output-encoding") == 0) {
+        return "utf8";
+    }
+    return "";
+}
+
+
+
+
+
 // eof = tabconfig.cpp
