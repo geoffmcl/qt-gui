@@ -7,6 +7,9 @@
 
 cmake_minimum_required( VERSION 2.8.8 )
 
+# CMakeScripts or use the ones that come by default with CMake.
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
+
 project( qt-gui )
 
 # Add LINUX or WINDOWS definitions
@@ -44,6 +47,19 @@ set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT" )
 set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LD_FLAGS}" )
 
+#  TIDY_FOUND          - True if tidy found.
+#  TIDY_INCLUDE_DIRS   - where to find tidy.h, etc.
+#  TIDY_LIBRARIES      - List of libraries when using tidy.
+find_package( Tidy )
+if (TIDY_FOUND)
+    message(STATUS "*** Tidy found. lib ${TIDY_LIBRARIES} inc ${TIDY_INCLUDE_DIRS}")
+    list(APPEND add_LIBS ${TIDY_LIBRARIES})
+    include_directories( ${TIDY_INCLUDE_DIRS} )
+    add_definitions( -DUSE_TIDY_EXTERN )
+    message(STATUS "*** Set -DUSE_TIDY_EXTERN")
+else ()
+    message(STATUS "*** Tidy NOT found! No Tidy GUI2 built")
+endif ()    
 # configuration file, if needed
 # configure_file( ${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h )
 # add_definitions( -DHAVE_CONFIG_H )
@@ -87,6 +103,30 @@ if (MSVC)
 endif ()
 # deal with install 
 # install(TARGETS qt-gui DESTINATION bin )
+
+##############################################
+### Tidy GUI 2
+if (TIDY_FOUND)
+    set(name tidy-gui2)
+    set(dir src/tidy-gui)
+    set( ${name}_SRCS
+        ${dir}/tg-main.cpp
+        ${dir}/tg-dialog.cpp
+        ${dir}/tg-config.cpp
+        )
+    set( ${name}_HDRS
+        ${dir}/tg-dialog.h
+        ${dir}/tg-config.h
+        )
+    QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
+    add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} )
+    target_link_libraries( ${name} ${QT_LIBRARIES} ${add_LIBS} )
+    if (MSVC)
+        set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
+    endif ()
+    # deal with install 
+    # install(TARGETS qt-gui DESTINATION bin )
+endif ()
 
 ################################################
 ### TABDIALOG SAMPLES
