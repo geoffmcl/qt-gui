@@ -403,6 +403,20 @@ bool getConfigBool( const char *item )
     return false;
 }
 
+Bool setConfigBool( const char *item, Bool val )
+{
+    Bool done = no;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+        Bool curr = tidyOptGetBool(tdoc, id);
+        if (curr != val) {
+            done = tidyOptSetBool(tdoc, id, val);
+        }
+    }
+    return done;
+}
+
+
 // TODO: CHECK AutoBool to triSate mappings
 // Tidy AutoBool has no(0), yes(1), auto(2)
 // Qt4  triState has no(0), yes(2), part(1)
@@ -413,6 +427,19 @@ TidyTriState getConfigABool( const char *item )
         return (TidyTriState)tidyOptGetInt(tdoc,id);
         // return cfgAutoBool(tdoc, id);
     return TidyAutoState;
+}
+
+Bool setConfigABool( const char *item, Bool val )
+{
+    Bool done = no;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+        Bool curr = (Bool)tidyOptGetInt(tdoc,id);
+        if (curr != val) {
+            done = tidyOptSetInt(tdoc,id,val);
+        }
+    }
+    return done;
 }
 
 
@@ -434,6 +461,18 @@ int getConfigInt( const char *item )
     return 0;
 }
 
+Bool setConfigInt( const char *item, int val )
+{
+    Bool done = no;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+        int curr = tidyOptGetInt(tdoc,id);
+        if (curr != val) {
+            done = tidyOptSetInt(tdoc,id,val);
+        }
+    }
+    return done;
+}
 
 const char *getConfigStg( const char *item )
 {
@@ -442,6 +481,20 @@ const char *getConfigStg( const char *item )
          return tidyOptGetValue(tdoc,id);
     return "";
 }
+
+Bool setConfigStg( const char *item, const char *stg )
+{
+    Bool done = no;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+        const char *curr = tidyOptGetValue(tdoc,id);
+        if (!curr || strcmp(curr,stg)) {
+            done = tidyOptSetValue(tdoc,id,stg);
+        }
+    }
+    return done;
+}
+
 
 const char *getConfigEnc( const char *item )
 {
@@ -468,6 +521,20 @@ const char *getConfigEnc( const char *item )
     return "";
 }
 
+Bool setConfigEnc( const char *item, const char *val )
+{
+    Bool done = no;
+    const char *curr = 0;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+         curr = tidyOptGetEncName(tdoc,id);
+         if (strcmp(curr,item)) {
+             done = tidyOptSetValue(tdoc,id,val);
+         }
+    }
+    return done;
+}
+
 const char *getConfigEnum( const char *item )
 {
     TidyOptionId id = getTidyOptionId(item);
@@ -475,6 +542,21 @@ const char *getConfigEnum( const char *item )
          return tidyOptGetCurrPick(tdoc,id);
     return "";
 }
+
+Bool setConfigEnum( const char *item, const char *val )
+{
+    Bool done = no;
+    const char *curr = 0;
+    TidyOptionId id = getTidyOptionId(item);
+    if (id < N_TIDY_OPTIONS) {
+         curr = tidyOptGetCurrPick(tdoc,id);
+         if (strcmp(curr,item)) {
+             done = tidyOptSetValue(tdoc,id,val);
+         }
+    }
+    return done;
+}
+
 const char *getConfigPick( const char *item )
 {
     TidyOptionId id = getTidyOptionId(item);
@@ -483,5 +565,30 @@ const char *getConfigPick( const char *item )
     return "";
 }
 
+typedef struct tagSINKDATA {
+    int context;
+}SINKDATA, PSINKDATA;
 
-// eof = tabconfig.cpp
+// TIDY_EXPORT int TIDY_CALL         tidyOptSaveSink( TidyDoc tdoc, TidyOutputSink* sink );
+static TidyOutputSink sink;
+static SINKDATA sinkdata;
+static void TIDY_CALL putByteFunc(void* sinkData, byte bt )
+{
+    // do something with the byte
+    if (sinkData && bt) {
+        printf("%c",bt);
+    }
+}
+
+int showConfig()
+{
+    int iret = 1;
+    sinkdata.context = 1;
+    printf("Display of configuration items not equal default...\n");
+    if (tidyInitSink( &sink, &sinkdata, &putByteFunc )) {
+        iret = tidyOptSaveSink(tdoc, &sink);
+    }
+    return iret;
+}
+
+// eof = tg-conifg.cpp

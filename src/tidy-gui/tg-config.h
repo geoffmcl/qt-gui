@@ -21,6 +21,16 @@ extern const char *getConfigEnum( const char *item );
 extern const char *getConfigPick( const char *item );
 extern TidyTriState getConfigABool( const char *item );
 
+extern Bool setConfigEnc( const char *item, const char *val );   // set encoding
+extern Bool setConfigEnum( const char *item, const char *val );  // set enum and doctype
+extern Bool setConfigBool( const char *item, Bool val );
+extern Bool setConfigABool( const char *item, Bool val );
+extern Bool setConfigStg( const char *item, const char *stg );
+extern Bool setConfigInt( const char *item, int val );
+
+
+extern int showConfig();
+
 
 #endif // #ifndef _TABCONFIG_H_
 // eof - tabconfig.h
