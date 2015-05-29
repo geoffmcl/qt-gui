@@ -30,12 +30,19 @@ open_log($outfile);
 my $VERS = "0.0.5 2015-01-09";
 my $load_log = 0;
 my $in_file = '';
+my $in_file2 = '';
+my $in_file3 = '';
 my $verbosity = 0;
 my $out_file = '';
+
+my $tmp_out = $temp_dir.$PATH_SEP."temptg.h";
+
 
 # ### DEBUG ###
 my $debug_on = 1;
 my $def_file = 'C:\Projects\qt\qt-gui\data\tidycfg.xml';
+my $def_file2 = 'C:\Projects\qt\qt-gui\src\tidy-gui\tg-dialog.h';
+my $def_file3 = 'C:\Projects\qt\qt-gui\src\tidy-gui\tg-dialog.cpp';
 
 ### program variables
 my @warnings = ();
@@ -78,6 +85,16 @@ sub prtw($) {
    push(@warnings,$tx);
 }
 
+my $cppstatic = "// static objects\n";
+my @chkboxes = ();
+my @labels = ();
+my @editboxes = ();
+my @combos = ();
+my $addcode = "// code to be added\n";
+my $addhead = "// code to be added to header\n";
+my $lasthead = '';
+my %slothash = ();
+
 # 1. create tab class
 # class GeneralTab : public QWidget
 # {
@@ -112,59 +129,288 @@ EOF
     return $txt;
 }
 
+sub set_header_slots($$) {
+    my ($token,$name) = @_;
+    my $txt = '';
+    if ($lasthead ne $name) {
+        $lasthead = $name;
+        $txt .= "\npublic slots: // ADD to $name\n";
+    }
+    $txt .= "    void on_$token();\n";
+    $addhead .= $txt;
+    $slothash{$name} = [] if (! defined $slothash{$name});
+    my $ra = $slothash{$name};
+    push(@{$ra},$txt);
+}
+
+
+sub get_bool_change($$$$) {
+    my ($label,$token,$class,$name) = @_;
+    set_header_slots($token,$name);
+    my $txt = <<EOF;
+
+void $name\:\:on_$token()
+{
+    const char *label = "$label";
+    QCheckBox *w = qobject_cast<QCheckBox *>(sender());
+    if (w) {
+        Bool b = (Bool)w->isChecked();
+        setConfigBool( label, b );
+    }
+}
+
+EOF
+    return $txt;
+}
+
 #    QCheckBox *$token = new QCheckBox(\"$label\"));
 #    if (fileInfo.isReadable())
 #        readable->setChecked(true);
-sub get_bool_cb($$) {
-    my ($label,$token) = @_;
+sub get_bool_cb($$$$) {
+    my ($label,$token,$class,$name) = @_;
     my $text = "$label (Boolean)";
+    $cppstatic .= "static QCheckBox *$token;\n";
+    push(@chkboxes, [$token,$label,'Boolean',$class]);
+    $addcode .= get_bool_change($label,$token,$class,$name);
     my $txt = <<EOF;
 
-    QCheckBox *$token = new QCheckBox(\"$text\");
+    $token = new QCheckBox(\"$text\");
     if (getConfigBool(\"$label\")) {
         $token->setChecked(true);
     }
+    connect($token,SIGNAL(clicked()),this,SLOT(on_$token()));
+
 EOF
     return $txt;
 }
 
-sub get_bool_cb3($$) {
-    my ($label,$token) = @_;
+sub get_autobool_change($$$$) {
+    my ($label,$token,$class,$name) = @_;
+    set_header_slots($token,$name);
+    my $txt = <<EOF;
+
+void $name\:\:on_$token()
+{
+    const char *label = "$label";
+    QCheckBox *w = qobject_cast<QCheckBox *>(sender());
+    if (w) {
+        Bool b;
+        Qt::CheckState cs = w->checkState();
+        if (cs ==  Qt::Checked)
+            b = yes;
+        else if (cs == Qt::Unchecked)
+            b = no;
+        else
+            b = (Bool)2;
+        setConfigABool( label, b );
+    }
+}
+
+EOF
+    return $txt;
+}
+
+
+sub get_bool_cb3($$$$$) {
+    my ($label,$token,$type,$class,$name) = @_;
     my $text = "$label (AutoBool)";
+    $cppstatic .= "static QCheckBox *$token;\n";
+    push(@chkboxes, [$token,$label,$type,$class]);
+    $addcode .= get_autobool_change($label,$token,$class,$name);
     my $txt = <<EOF;
 
-    QCheckBox *$token = new QCheckBox(\"$text\");
-    if (getConfigBool(\"$label\")) {
+    $token = new QCheckBox(\"$text\");
+    $token->setTristate(true);
+    i = getConfigABool(\"$label\");
+    if (i == 0) {
+        $token->setChecked(false);
+        // $token->setCheckState(Qt::Unchecked); // 0
+    } else if (i == 1) {
         $token->setChecked(true);
+        // $token->setCheckState(Qt::Checked); // 2
+    } else {
+        $token->setCheckState(Qt::PartiallyChecked); // 1
     }
+    connect($token,SIGNAL(clicked()),this,SLOT(on_$token()));
+
 EOF
     return $txt;
 }
 
-sub get_edit_int($$) {
-    my ($label,$token) = @_;
+# $addcode .= get_editint_change($label,$token,$type,$class,$name,$te);
+sub get_editint_change($$$$$$) {
+    my ($label,$token,$type,$class,$name,$te) = @_;
+    set_header_slots($te,$name);
+    my $txt = <<EOF;
+
+void $name\:\:on_$te()
+{
+    const char *label = "$label";
+    QLineEdit *w = qobject_cast<QLineEdit *>(sender());
+    if (w) {
+        QString s = w->text();
+        int i = s.toInt();
+        setConfigInt( label, i );
+    }
+}
+
+EOF
+    return $txt;
+}
+
+# $cpp .= get_edit_int($label,$token,$type,$class,$name);
+sub get_edit_int($$$$$) {
+    my ($label,$token,$type,$class,$name) = @_;
     my $te = $token."Ed";
     my $text = "$label (Integer)";
+    $cppstatic .= "static QLabel *$token;\n";
+    $cppstatic .= "static QLineEdit *$te;\n";
+    push(@labels, [$token,$label,$type,$class]);
+    push(@editboxes, [$te,$label,$type,$class]);
+    $addcode .= get_editint_change($label,$token,$type,$class,$name,$te);
     my $txt = "\n";
-    $txt .= "    QLabel *$token = new QLabel(\"$text\");\n";
+    $txt .= "    $token = new QLabel(\"$text\");\n";
     $txt .= "    i = getConfigInt(\"$label\");\n";
     $txt .= "    s = QString::number(i);\n";
-    $txt .= "    QLineEdit *$te = new QLineEdit(s);\n";
+    $txt .= "    $te = new QLineEdit(s);\n";
     $txt .= "    $te->setMaximumWidth(50);\n";
+    $txt .= "    connect($te,SIGNAL(editingFinished()),this,SLOT(on_$te()));\n";
     return $txt;
 }
 
-sub get_edit_stg($$) {
-    my ($label,$token) = @_;
+sub get_editstg_change($$$$$$) {
+    my ($label,$token,$type,$class,$name,$te) = @_;
+    set_header_slots($te,$name);
+    my $txt = <<EOF;
+
+void $name\:\:on_$te()
+{
+    const char *label = "$label";
+    QLineEdit *w = qobject_cast<QLineEdit *>(sender());
+    if (w) {
+        QString s = w->text();
+        s = s.trimmed();
+        setConfigStg( label, s.toStdString().c_str() );
+    }
+}
+
+EOF
+    return $txt;
+}
+
+sub get_edit_stg($$$$$) {
+    my ($label,$token,$type,$class,$name) = @_;
     my $te = $token."Ed";
     my $text = "$label (String)";
+    $cppstatic .= "static QLabel *$token;\n";
+    $cppstatic .= "static QLineEdit *$te;\n";
+    push(@labels, [$token,$label,$type,$class]);
+    push(@editboxes, [$te,$label,$type,$class]);
+    $addcode .= get_editstg_change($label,$token,$type,$class,$name,$te);
     my $txt = "\n";
-    $txt .= "    QLabel *$token = new QLabel(\"$text\");\n";
+    $txt .= "    $token = new QLabel(\"$text\");\n";
     $txt .= "    s = getConfigStg(\"$label\");\n";
-    $txt .= "    QLineEdit *$te = new QLineEdit(s);\n";
+    $txt .= "    $te = new QLineEdit(s);\n";
+    $txt .= "    connect($te,SIGNAL(editingFinished()),this,SLOT(on_$te()));\n";
     return $txt;
 }
 
+sub get_combo_change1($$$) {
+    my ($name,$comb,$label) = @_;
+    set_header_slots($comb,$name);
+    my $txt = <<EOF;
+
+// combobox slot change handler
+void $name\:\:on_$comb()
+{
+    const char *label = "$label";
+    QComboBox *w = qobject_cast<QComboBox *>(sender());
+    if (w) {
+        int i = w->currentIndex();
+        QVariant qv = w->itemData(i);
+        QString qs = qv.toString();
+        setConfigEnc( label, qs.toStdString().c_str() );
+    }
+}
+
+EOF
+    return $txt;
+}
+
+sub get_combo_change2($$$) {
+    my ($name,$comb,$label) = @_;
+    set_header_slots($comb,$name);
+    my $txt = <<EOF;
+
+// combobox slot change handler
+void $name\:\:on_$comb()
+{
+    const char *label = "$label";
+    QComboBox *w = qobject_cast<QComboBox *>(sender());
+    if (w) {
+        int i = w->currentIndex();
+        QVariant qv = w->itemData(i);
+        QString qs = qv.toString();
+        setConfigEnum( label, qs.toStdString().c_str() );
+    }
+}
+
+EOF
+    return $txt;
+}
+
+
+sub get_combo($$$$$$) {
+    my ($label,$token,$exam,$typ,$class,$name) = @_;
+    my @arr = split(",",$exam);
+    my $cnt = scalar @arr;
+    my $cb = $token."Comb";
+    my $lo = $token."Lay";
+    my $comb = "// TODO: handle $typ change\n";
+    my $conn = "// TODO: handle $typ connect\n";
+    if ($cnt == 0) {
+        pgm_exit(1,"ERROR: combo failed $label, $token, $exam! *** FIX ME ***\n");
+    }
+    my ($itm);
+    $cppstatic .= "static QComboBox *$cb;\n";
+    push(@combos, [$cb,$label,$typ,$class]);
+    my $txt = "\n";
+    $txt .= "    QGroupBox *$token = new QGroupBox(\"$label\");\n";
+    $txt .= "    $cb = new QComboBox();\n";
+    foreach $itm (@arr) {
+        $itm = trim_all($itm);
+        $txt .= "    $cb->addItem(\"$itm\",\"$itm\");\n";
+    }
+    if ($typ eq 'Encoding') {
+        $txt .= "    s = getConfigEnc(\"$label\");\n";
+        $comb = get_combo_change1($name,$cb,$label);
+        $conn = "    connect($cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_$cb()));\n";
+    } elsif ($typ eq 'enum') {
+        $txt .= "    s = getConfigEnum(\"$label\");\n";
+        $comb = get_combo_change2($name,$cb,$label);
+        $conn = "    connect($cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_$cb()));\n";
+    } elsif ($typ eq 'DocType') {
+        $txt .= "    s = getConfigPick(\"$label\");\n";
+        # may be the same???
+        $comb = get_combo_change2($name,$cb,$label);
+        $conn = "    connect($cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_$cb()));\n";
+    } else {
+        pgm_exit(1,"ERROR: get_combo() called with unknonw type '$typ'! *** FIX ME ***\n");
+    }
+    $txt .= "    i = $cb->findData(s);\n";
+    $txt .= "    if (i != -1) {\n";
+    $txt .= "        $cb->setCurrentIndex(i);\n";
+    $txt .= "    }\n";
+    $txt .= "    QVBoxLayout *$lo = new QVBoxLayout;\n";
+    $txt .= "    $lo->addWidget($cb);\n";
+    $txt .= "    $lo->addStretch(1);\n";
+    $txt .= "    $token->setLayout($lo);\n";
+    ###$txt .= "    // this FAILED ???\n";
+    ###$txt .= "    // connect($cb, SIGNAL(currentIndexChanged(int)), this, SLOT($comb(\"$label\")));\n";
+    $txt .= $conn;
+    $addcode .= $comb;
+    return $txt;
+}
 
 sub get_tab_name($) {
     my $name = shift;
@@ -178,14 +424,139 @@ sub get_lo_name($) {
     return $name;
 }
 
+sub get_strucs() {
+    my $txt = <<EOF;
+
+// structures for objects
+typedef struct tagCHKBXS {
+    QCheckBox *p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+}CHKBXS, *PCHKBXS;
+
+typedef struct tagLABEL {
+    QLabel *p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+}LABEL, *PLABEL;
+
+typedef struct tagLINED {
+    QLineEdit *p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+}LINED, *PLINED;
+
+typedef struct tagCOMBOS {
+    QComboBox *p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+}COMBOS, *PCOMBOS;
+
+EOF
+    return $txt;
+}
+
+sub reset_in_file3($) {
+    my $newcpp = shift;
+    my $inf = $in_file3;
+    if (! open INF, "<$inf") {
+        prtw("WARNING: Failed to open '$inf'\n"); 
+        return;
+    }
+    my @lines = <INF>;
+    close INF;
+    my $lncnt = scalar @lines;
+    prt("Processing $lncnt lines, from [$inf]...\n");
+    my ($i,$line,$nline,$ra);
+    my @nlines = ();
+    for ($i = 0; $i < $lncnt; $i++) {
+        $line = $lines[$i];
+        if ($line =~ /^\/\/\s+INSERT\s+HERE\s+/) {
+            push(@nlines,$line);
+            $i++;
+            for (; $i < $lncnt; $i++) {
+                $line = $lines[$i];
+                if ($line =~ /^\/\/\s+END\s+INSERT\s+/) {
+                    last;
+                }
+            }
+            last;
+        }
+        push(@nlines,$line);
+    }
+    $nline = join("",@nlines);
+    $nline .= $newcpp;
+    ### $nline .= $line;
+    for (; $i < $lncnt; $i++) {
+        $line = $lines[$i];
+        $nline .= $line;
+    }
+    ##write2file($nline,$tmp_out);
+    ##prt("New contents of $inf\nwritten to $tmp_out\n");
+    rename_2_old_bak($inf);
+    write2file($nline,$inf);
+    prt("New contents of $inf written\n");
+}
+
+
+sub reset_in_file2() {
+    my $inf = $in_file2;
+    if (! open INF, "<$inf") {
+        prtw("WARNING: Failed to open '$inf'\n"); 
+        return;
+    }
+    my @lines = <INF>;
+    close INF;
+    my $lncnt = scalar @lines;
+    prt("Processing $lncnt lines, from [$inf]...\n");
+    my ($i,$line,$class,$ra);
+    my @nlines = ();
+    $class = 'unknonw';
+    for ($i = 0; $i < $lncnt; $i++) {
+        $line = $lines[$i];
+        chomp $line;
+        if ($line =~ /^class\s+(\w+)\s+/) {
+            $class = $1;
+        } elsif ($line =~ /^public\s+slots:/) {
+            if (defined $slothash{$class}) {
+                $i++;
+                for (; $i < $lncnt; $i++) {
+                    $line = $lines[$i];
+                    chomp $line;
+                    last if ($line =~ /^\};/);
+                }
+                $ra = $slothash{$class};
+                foreach $line (@{$ra}) {
+                    $line = trim_tailing($line);
+                    push(@nlines,$line);
+                }
+                push(@nlines,"");
+                push(@nlines,"};");
+                next;
+            }
+        }
+        push(@nlines,$line);
+    }
+    $line = join("\n",@nlines);
+    $line .= "\n";
+    rename_2_old_bak($inf);
+    write2file($line,$inf);
+    prt("New contents of $inf written\n");
+
+}
+
+
 #     QLabel *fileNameLabel = new QLabel(tr("File Name:"));
 #     QLineEdit *fileNameEdit = new QLineEdit(fileInfo.fileName());
-
 
 sub show_options($) {
     my ($ra) = @_;  # \@options);
     my $len = scalar @{$ra};
-    my ($rh,$op,$val,$class,$type,$def,$name,$tt,$label,$token,$lon,$hcnt,$roa,$i);
+    my ($rh,$op,$val,$class,$type,$def,$name,$tt,$label,$token,$lon,$hcnt,$roa,$i,$exam,$curr);
     my @opts = qw( name type default example seealso description );
     my %classes = ();
     $op = 'class';
@@ -209,31 +580,67 @@ sub show_options($) {
         $cpp .= get_imp_head($name);
         @checkboxes = ();   # clear widget to add
         foreach $rh (@{$ra}) {
-            next if (${$rh}{class} ne $class);
+            $curr  = ${$rh}{class};
             $type  = ${$rh}{type};
             $def   = ${$rh}{default};
             $label = ${$rh}{name};
             $tt    = ${$rh}{description};
+            $exam  = ${$rh}{example};
             $token = $label;
+            if ($curr ne $class) {
+                # UGH - Want to switch some page classes
+                if (($curr eq 'markup') && ($class eq 'encoding') &&
+                    (($label eq 'doctype')||($label eq 'repeated-attributes')) ) {
+                    # add this markup to encoding page
+                } elsif (($curr eq 'markup') && ($class eq 'misc') &&
+                    (($label eq 'alt-text') ||
+                     ($label eq 'css-prefix') ||
+                     ($label =~ /^new-(.+)-tags$/)) ) {
+                    # add this markup to misc page
+                } else {
+                    next;
+                }
+            } else {
+                # $class and $curr are the SAME
+                # have moved two to another page
+                if (($curr eq 'markup') &&
+                    (($label eq 'doctype')||($label eq 'repeated-attributes')||
+                        ($label eq 'alt-text') ||
+                        ($label eq 'css-prefix') ||
+                        ($label =~ /^new-(.+)-tags$/) ) ) {
+                    next;   # these have been MOVED to 'encoding' or 'misc'
+                    # mainly due to 'markup' has too many options
+                }
+
+            }
             $token =~ s/\-/_/g;
             if ($type eq 'Boolean') {
-                $cpp .= get_bool_cb($label,$token);
+                $cpp .= get_bool_cb($label,$token,$class,$name);
                 push(@checkboxes,[$token,$type,$label]);   # save to add to layout
             } elsif ($type eq 'Integer') {
-                $cpp .= get_edit_int($label,$token);
+                $cpp .= get_edit_int($label,$token,$type,$class,$name);
                 push(@checkboxes,[$token,$type,$label]);   # save to add to layout
                 push(@checkboxes,[$token.'Ed',$type,$label]);   # save to add to layout
             } elsif ($type eq 'AutoBool') {
-                $cpp .= get_bool_cb3($label,$token);
+                $cpp .= get_bool_cb3($label,$token,$type,$class,$name);
                 push(@checkboxes,[$token,$type,$label]);   # save to add to layout
             } elsif ($type eq 'String') {
-                $cpp .= get_edit_stg($label,$token);
+                $cpp .= get_edit_stg($label,$token,$type,$class,$name);
                 push(@checkboxes,[$token,$type,$label]);   # save to add to layout
                 push(@checkboxes,[$token.'Ed',$type,$label]);   # save to add to layout
             } elsif ($type eq 'Tag names') {
-                $cpp .= get_edit_stg($label,$token);
+                $cpp .= get_edit_stg($label,$token,$type,$class,$name);
                 push(@checkboxes,[$token,$type,$label]);   # save to add to layout
                 push(@checkboxes,[$token.'Ed',$type,$label]);   # save to add to layout
+            } elsif ($type eq 'Encoding') {
+                $cpp .= get_combo($label,$token,$exam,$type,$class,$name);
+                push(@checkboxes,[$token,$type,$label]);   # save to add to layout
+            } elsif ($type eq 'enum') {
+                $cpp .= get_combo($label,$token,$exam,$type,$class,$name);
+                push(@checkboxes,[$token,$type,$label]);   # save to add to layout
+            } elsif ($type eq 'DocType') {
+                $cpp .= get_combo($label,$token,$exam,$type,$class,$name);
+                push(@checkboxes,[$token,$type,$label]);   # save to add to layout
             } else {
                 prt("\n");
                 foreach $op (@opts) {
@@ -249,6 +656,7 @@ sub show_options($) {
             $hcnt = int($cnt / 2);
             my $n1 = $lon."1";
             my $n2 = $lon."2";
+            $cpp .= "\n";
             $cpp .= "    QVBoxLayout *$n1 = new QVBoxLayout;\n";
             for ($i = 0; $i < $hcnt; $i++) {
                 $roa = $checkboxes[$i];
@@ -257,6 +665,8 @@ sub show_options($) {
                 $label = ${$roa}[2];
                 $cpp .= "    $n1->addWidget($token);\n";
             }
+            $cpp .= "    $n1->addStretch(1);\n";
+            $cpp .= "\n";
             $cpp .= "    QVBoxLayout *$n2 = new QVBoxLayout;\n";
             for (; $i < $cnt; $i++) {
                 $roa = $checkboxes[$i];
@@ -265,11 +675,14 @@ sub show_options($) {
                 $label = ${$roa}[2];
                 $cpp .= "    $n2->addWidget($token);\n";
             }
+            $cpp .= "    $n2->addStretch(1);\n";
+            $cpp .= "\n";
             $cpp .= "    QHBoxLayout *$lon = new QHBoxLayout;\n";
             $cpp .= "    $lon->addLayout($n1);\n";
             $cpp .= "    $lon->addLayout($n2);\n";
             $cpp .= "    setLayout($lon);\n";
         } else {
+            $cpp .= "\n";
             $cpp .= "    QVBoxLayout *$lon = new QVBoxLayout;\n";
             for ($i = 0; $i < $cnt; $i++) {
                 $roa = $checkboxes[$i];
@@ -281,11 +694,80 @@ sub show_options($) {
             $cpp .= "    $lon->addStretch(1);\n";
             $cpp .= "    setLayout($lon);\n";
         }
-        $cpp .= "}\n";
+        $cpp .= "}\n\n";
     }
+
+    my $tm = time();
+    my $newcpp = "\n// Generated by $pgmname ".lu_get_YYYYMMDD_hhmmss_UTC($tm)." UTC, ".lu_get_hhmmss($tm)." local\n\n";
     #prt($chh);
+    prt($newcpp);
+    prt($addhead);
+    prt($addcode);
+    $newcpp .= $addcode;
+    prt(get_strucs());
+    $newcpp .= get_strucs();
+    prt($cppstatic);
+    $newcpp .= $cppstatic;
+    # ==================
+    # CHKBXS
+    $name = "\n";
+    $name .= "static CHKBXS chkbxs[] = {\n";
+    foreach $roa (@chkboxes) {
+        $token = ${$roa}[0];
+        $label = ${$roa}[1];
+        $type  = ${$roa}[2];
+        $class = ${$roa}[3];
+        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+    }
+    $name =~ s/,\n$/\n/g;
+    $name .= "};\n";
+    # LABEL
+    $name .= "\n";
+    $name .= "static LABEL label[] = {\n";
+    foreach $roa (@labels) {
+        $token = ${$roa}[0];
+        $label = ${$roa}[1];
+        $type  = ${$roa}[2];
+        $class = ${$roa}[3];
+        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+    }
+    $name =~ s/,\n$/\n/g;
+    $name .= "};\n";
+    # LINED 
+    $name .= "\n";
+    $name .= "static LINED lined[] = {\n";
+    foreach $roa (@editboxes) {
+        $token = ${$roa}[0];
+        $label = ${$roa}[1];
+        $type  = ${$roa}[2];
+        $class = ${$roa}[3];
+        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+    }
+    $name =~ s/,\n$/\n/g;
+    $name .= "};\n";
+    # COMBOS
+    $name .= "\n";
+    $name .= "static COMBOS combos[] = {\n";
+    foreach $roa (@combos) {
+        $token = ${$roa}[0];
+        $label = ${$roa}[1];
+        $type  = ${$roa}[2];
+        $class = ${$roa}[3];
+        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+    }
+    $name =~ s/,\n$/\n/g;
+    $name .= "};\n";
+    prt($name);
+    $newcpp .= $name;
     prt($cpp);
-    $load_log = 1;
+    $newcpp .= $cpp;
+    if (-f $in_file2) {
+        reset_in_file2();
+    }
+    if (-f $in_file3) {
+        reset_in_file3($newcpp);
+    }
+    ### $load_log = 1;
 }
 
 sub process_in_file($) {
@@ -595,6 +1077,8 @@ sub parse_args {
         if (length($in_file) ==  0) {
             $in_file = $def_file;
             prt("Set DEFAULT input to [$in_file]\n");
+            $in_file2 = $def_file2;
+            $in_file3 = $def_file3;
         }
     }
     if (length($in_file) ==  0) {
