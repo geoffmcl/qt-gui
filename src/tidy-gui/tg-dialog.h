@@ -34,6 +34,7 @@ public:
 public slots:
     void onQuit();
     void onShow();
+    void on_buttonTidy();
 
 private:
     QTabWidget *tabWidget;
@@ -49,6 +50,12 @@ class GeneralTab : public QWidget
 
 public:
     GeneralTab(const QFileInfo &fileInfo, QWidget *parent = 0);
+
+public slots:
+    void on_fileNameBrowse();
+    void on_fileNameEdit();
+    void on_outputNameBrowse();
+
 };
 
 
@@ -62,6 +69,7 @@ class DiagnosticsTab : public QWidget
     Q_OBJECT
 public:
     DiagnosticsTab( PINFOSTR pinf, QWidget *parent = 0);
+
 
 
 
@@ -85,6 +93,7 @@ public:
 
 
 
+
 public slots: // ADD to EncodingTab
     void on_char_encodingComb();
     void on_input_encodingComb();
@@ -103,6 +112,7 @@ class MarkupTab : public QWidget
     Q_OBJECT
 public:
     MarkupTab( PINFOSTR pinf, QWidget *parent = 0);
+
 
 
 
@@ -168,11 +178,11 @@ public:
 
 
 
+
 public slots: // ADD to MiscTab
     void on_alt_textEd();
     void on_slide_styleEd();
     void on_error_fileEd();
-    void on_output_fileEd();
     void on_write_back();
     void on_quiet();
     void on_keep_time();
@@ -193,6 +203,7 @@ class PrintTab : public QWidget
     Q_OBJECT
 public:
     PrintTab( PINFOSTR pinf, QWidget *parent = 0);
+
 
 
 

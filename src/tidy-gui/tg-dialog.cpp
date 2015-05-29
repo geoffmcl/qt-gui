@@ -38,7 +38,19 @@
 
 static INFOSTR infostr;
 
-//! [0]
+QPushButton *buttonTidy;
+QTextEdit *bigEditor;
+
+// check if file exists and if yes: Is it really a file and not a directory?
+bool m_fileExists(QString path) 
+{
+    QFileInfo checkFile(path);
+    if (checkFile.exists() && checkFile.isFile()) {
+        return true;
+    }
+    return false;
+}
+
 TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     : QDialog(parent)
 {
@@ -57,6 +69,36 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
 
     restoreGeometry(settings->value("mainWindowGeometry").toByteArray());
 
+    ////////////////////////////////////////////////////////////////////////
+    buttonBox = new QDialogButtonBox(this);
+
+	QPushButton *buttonQuit = new QPushButton();
+    // buttonQuit->setIcon(QIcon(":/icons/black"));
+	buttonQuit->setText("Quit");
+
+    buttonTidy = new QPushButton();
+	buttonTidy->setText("Tidy!");
+    if (!m_fileExists(fileName)) {
+        buttonTidy->setEnabled(false);
+    }
+
+    QPushButton *buttonShow = new QPushButton();
+	buttonShow->setText("Show");
+
+	buttonBox->addButton(buttonQuit, QDialogButtonBox::ActionRole);
+	buttonBox->addButton(buttonShow, QDialogButtonBox::ActionRole);
+	buttonBox->addButton(buttonTidy, QDialogButtonBox::ActionRole);
+	//buttonBox->addButton(buttonQuit,QDialogButtonBox::RejectRole);
+
+    buttonBox->setLayoutDirection( Qt::RightToLeft );
+    //buttonBox->setCenterButtons(true); // got it see above - prefer LEFT, but can could not find out how
+
+	//connect(buttonQuit, SIGNAL(clicked()), this, SLOT(reject()));
+	connect(buttonQuit, SIGNAL(clicked()), this, SLOT(onQuit()));
+	connect(buttonShow, SIGNAL(clicked()), this, SLOT(onShow()));
+	connect(buttonTidy, SIGNAL(clicked()), this, SLOT(on_buttonTidy()));
+
+    // set up the TABS
     tabWidget = new QTabWidget;
     tabWidget->addTab(new GeneralTab(fileInfo), tr("General"));
     tabWidget->addTab(new DiagnosticsTab( pinfo ), tr("Diagnostics"));
@@ -64,30 +106,11 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     tabWidget->addTab(new MarkupTab( pinfo ), tr("Markup"));
     tabWidget->addTab(new MiscTab( pinfo ), tr("Misc"));
     tabWidget->addTab(new PrintTab( pinfo ), tr("Print"));
-    ////////////////////////////////////////////////////////////////////////
-#ifdef USE_OK_CANCEL
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-#else 
-    buttonBox = new QDialogButtonBox(this);
-	QPushButton *buttonQuit = new QPushButton();
-    // buttonQuit->setIcon(QIcon(":/icons/black"));
-	buttonQuit->setText("Quit");
-	buttonBox->addButton(buttonQuit,QDialogButtonBox::RejectRole);
-    QPushButton *buttonShow = new QPushButton();
-	buttonShow->setText("Show");
-	buttonBox->addButton(buttonShow, QDialogButtonBox::ActionRole);
-
-	//connect(buttonQuit, SIGNAL(clicked()), this, SLOT(reject()));
-	connect(buttonQuit, SIGNAL(clicked()), this, SLOT(onQuit()));
-	connect(buttonShow, SIGNAL(clicked()), this, SLOT(onShow()));
-#endif 
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
-    mainLayout->addWidget(tabWidget);
     mainLayout->addWidget(buttonBox);
+    mainLayout->addWidget(tabWidget);
     setLayout(mainLayout);
     setWindowTitle(tr("Tidy GUI 2"));
 }
@@ -110,6 +133,11 @@ void TabDialog::onShow()
     showConfig();
 }
 
+void TabDialog::on_buttonTidy()
+{
+    // TODO: This is the REAL WORK 
+    // How to pass the file to tidy
+}
 
 static void check_me(QWidget *w)
 {
@@ -118,51 +146,129 @@ static void check_me(QWidget *w)
 
 }
 
+//QLabel *fileNameLabel;
+QLineEdit *fileNameEdit;
+QToolButton *fileNameBrowse;
+
+//QLabel *outputNameLabel;
+QLineEdit *outputNameEdit;
+QToolButton *outputNameBrowse;
+
 ////////////////////////////////////////////////////////////////
 //// TABS
 
 GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
     : QWidget(parent)
 {
-    QLabel *fileNameLabel = new QLabel(tr("File Name:"));
-    QLineEdit *fileNameEdit = new QLineEdit(fileInfo.fileName());
+    fileNameEdit = new QLineEdit(fileInfo.fileName());
+    fileNameBrowse = new QToolButton();
+    fileNameBrowse->setToolTip("Browse for input file");
+    //fileNameBrowse->setAutoRaise(true);
+    //fileNameBrowse->setIcon(QIcon(":/icon/folder_open"));
+    //fileNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    //fileNameBrowse->setDisabled(true);
+    //layAeroTopBar->addWidget(buttOpenAeroDir, 0);
+    //connect(buttOpenAeroDir, SIGNAL(clicked()),this, SLOT(on_open_aircraft_path())
 
-    QLabel *pathLabel = new QLabel(tr("Path:"));
-    QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
-    pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    //outputNameLabel = new QLabel(tr("Output File Name:"));
+    outputNameEdit = new QLineEdit("");
+    outputNameBrowse = new QToolButton();
+    outputNameBrowse->setToolTip("Browse for output file");
+    //QLabel *pathLabel = new QLabel(tr("Path:"));
+    //QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
+    //pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
-    QLabel *sizeLabel = new QLabel(tr("Size:"));
-    qlonglong size = fileInfo.size()/1024;
-    QLabel *sizeValueLabel = new QLabel(tr("%1 K").arg(size));
-    sizeValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    //QLabel *sizeLabel = new QLabel(tr("Size:"));
+    //qlonglong size = fileInfo.size()/1024;
+    //QLabel *sizeValueLabel = new QLabel(tr("%1 K").arg(size));
+    //sizeValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
-    QLabel *lastReadLabel = new QLabel(tr("Last Read:"));
-    QLabel *lastReadValueLabel = new QLabel(fileInfo.lastRead().toString());
-    lastReadValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    //QLabel *lastReadLabel = new QLabel(tr("Last Read:"));
+    //QLabel *lastReadValueLabel = new QLabel(fileInfo.lastRead().toString());
+    //lastReadValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
-    QLabel *lastModLabel = new QLabel(tr("Last Modified:"));
-    QLabel *lastModValueLabel = new QLabel(fileInfo.lastModified().toString());
-    lastModValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    //QLabel *lastModLabel = new QLabel(tr("Last Modified:"));
+    //QLabel *lastModValueLabel = new QLabel(fileInfo.lastModified().toString());
+    //lastModValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    bigEditor = new QTextEdit;
+    bigEditor->setReadOnly(true);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(fileNameLabel);
-    mainLayout->addWidget(fileNameEdit);
-    mainLayout->addWidget(pathLabel);
-    mainLayout->addWidget(pathValueLabel);
-    mainLayout->addWidget(sizeLabel);
-    mainLayout->addWidget(sizeValueLabel);
-    mainLayout->addWidget(lastReadLabel);
-    mainLayout->addWidget(lastReadValueLabel);
-    mainLayout->addWidget(lastModLabel);
-    mainLayout->addWidget(lastModValueLabel);
+
+    QGroupBox *inputfileGroup = new QGroupBox("Input File Name");
+    QHBoxLayout *inputfileLay = new QHBoxLayout;
+
+    inputfileLay->addWidget(fileNameEdit);
+    inputfileLay->addWidget(fileNameBrowse);
+     connect(fileNameEdit,SIGNAL(editingFinished()),this,SLOT(on_fileNameEdit()));
+    connect(fileNameBrowse, SIGNAL(clicked()),this,SLOT(on_fileNameBrowse()));
+
+    inputfileGroup->setLayout(inputfileLay);
+    mainLayout->addWidget(inputfileGroup);
+
+    //mainLayout->addWidget(fileNameLabel);
+    //mainLayout->addWidget(fileNameEdit);
+    QGroupBox *outputfileGroup = new QGroupBox("Output File Name");
+    QHBoxLayout *outputfileLay = new QHBoxLayout;
+
+    outputfileLay->addWidget(outputNameEdit);
+    outputfileLay->addWidget(outputNameBrowse);
+    connect(outputNameBrowse, SIGNAL(clicked()),this,SLOT(on_outputNameBrowse()));
+
+    outputfileGroup->setLayout(outputfileLay);
+    mainLayout->addWidget(outputfileGroup);
+
+    //mainLayout->addWidget(outputNameLabel);
+    //mainLayout->addWidget(outputNameEdit);
+
+    //mainLayout->addWidget(pathLabel);
+    //mainLayout->addWidget(pathValueLabel);
+    //mainLayout->addWidget(sizeLabel);
+    //mainLayout->addWidget(sizeValueLabel);
+    //mainLayout->addWidget(lastReadLabel);
+    //mainLayout->addWidget(lastReadValueLabel);
+    //mainLayout->addWidget(lastModLabel);
+    //mainLayout->addWidget(lastModValueLabel);
+    mainLayout->addWidget(bigEditor);
     mainLayout->addStretch(1);
     setLayout(mainLayout);
+
+}
+
+void GeneralTab::on_fileNameEdit()
+{
+    QString file = fileNameEdit->text();
+    if (m_fileExists(file))
+        buttonTidy->setEnabled(true);
+    else
+        buttonTidy->setEnabled(true);
+}
+
+void GeneralTab::on_fileNameBrowse()
+{
+    QString title = "Get input file name";
+    QString inputFile = QFileDialog::getOpenFileName(this, title, fileNameEdit->text());
+    if(inputFile.length() > 0) {
+        fileNameEdit->setText(inputFile);
+        if (m_fileExists(inputFile))
+            buttonTidy->setEnabled(true);
+    }
+}
+
+void GeneralTab::on_outputNameBrowse()
+{
+    QString title = "Get input file name";
+    QString outputFile = QFileDialog::getSaveFileName(this, title, outputNameEdit->text());
+    if(outputFile.length() > 0) {
+        outputNameEdit->setText(outputFile);
+    }
 }
 
 
 // INSERT HERE //////////////////////////////////////////////////////////////////////
 
-// Generated by tidyxmlcfg.pl 2015/05/29 11:00:28 UTC, 13:00:28 local
+// Generated by tidyxmlcfg.pl 2015/05/29 12:40:13 UTC, 14:40:13 local
 
 // code to be added
 
@@ -902,18 +1008,6 @@ void MiscTab::on_error_fileEd()
 }
 
 
-void MiscTab::on_output_fileEd()
-{
-    const char *label = "output-file";
-    QLineEdit *w = qobject_cast<QLineEdit *>(sender());
-    if (w) {
-        QString s = w->text();
-        s = s.trimmed();
-        setConfigStg( label, s.toStdString().c_str() );
-    }
-}
-
-
 void MiscTab::on_write_back()
 {
     const char *label = "write-back";
@@ -1360,8 +1454,6 @@ static QLabel *slide_style;
 static QLineEdit *slide_styleEd;
 static QLabel *error_file;
 static QLineEdit *error_fileEd;
-static QLabel *output_file;
-static QLineEdit *output_fileEd;
 static QCheckBox *write_back;
 static QCheckBox *quiet;
 static QCheckBox *keep_time;
@@ -1481,7 +1573,6 @@ static LABEL label[] = {
     { alt_text, "alt-text", "String", "misc" },
     { slide_style, "slide-style", "String", "misc" },
     { error_file, "error-file", "String", "misc" },
-    { output_file, "output-file", "String", "misc" },
     { gnu_emacs_file, "gnu-emacs-file", "String", "misc" },
     { css_prefix, "css-prefix", "String", "misc" },
     { new_inline_tags, "new-inline-tags", "Tag names", "misc" },
@@ -1499,7 +1590,6 @@ static LINED lined[] = {
     { alt_textEd, "alt-text", "String", "misc" },
     { slide_styleEd, "slide-style", "String", "misc" },
     { error_fileEd, "error-file", "String", "misc" },
-    { output_fileEd, "output-file", "String", "misc" },
     { gnu_emacs_fileEd, "gnu-emacs-file", "String", "misc" },
     { css_prefixEd, "css-prefix", "String", "misc" },
     { new_inline_tagsEd, "new-inline-tags", "Tag names", "misc" },
@@ -2189,11 +2279,6 @@ MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
     error_fileEd = new QLineEdit(s);
     connect(error_fileEd,SIGNAL(editingFinished()),this,SLOT(on_error_fileEd()));
 
-    output_file = new QLabel("output-file (String)");
-    s = getConfigStg("output-file");
-    output_fileEd = new QLineEdit(s);
-    connect(output_fileEd,SIGNAL(editingFinished()),this,SLOT(on_output_fileEd()));
-
     write_back = new QCheckBox("write-back (Boolean)");
     if (getConfigBool("write-back")) {
         write_back->setChecked(true);
@@ -2273,8 +2358,6 @@ MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
     MiscLayout->addWidget(slide_styleEd);
     MiscLayout->addWidget(error_file);
     MiscLayout->addWidget(error_fileEd);
-    MiscLayout->addWidget(output_file);
-    MiscLayout->addWidget(output_fileEd);
     MiscLayout->addWidget(write_back);
     MiscLayout->addWidget(quiet);
     MiscLayout->addWidget(keep_time);
