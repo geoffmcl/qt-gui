@@ -174,6 +174,8 @@ GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
     outputNameEdit = new QLineEdit("");
     outputNameBrowse = new QToolButton();
     outputNameBrowse->setToolTip("Browse for output file");
+    outputNameBrowse->setIcon(QIcon(":/icon/save"));
+    outputNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
     //QLabel *pathLabel = new QLabel(tr("Path:"));
     //QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
     //pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);

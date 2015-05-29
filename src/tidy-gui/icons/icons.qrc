@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icon">
+        <file alias="save">floppy.png</file>
+    </qresource>
+</RCC>

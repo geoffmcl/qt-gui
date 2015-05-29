@@ -117,8 +117,12 @@ if (TIDY_FOUND)
         ${dir}/tg-dialog.h
         ${dir}/tg-config.h
         )
+    set( ${name}_RCC
+        ${dir}/icons/icons.qrc
+        )
     QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
-    add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} )
+    QT4_ADD_RESOURCES( ${name}_RESOURCES_RCC ${${name}_RCC} )
+    add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} ${${name}_RESOURCES_RCC} )
     target_link_libraries( ${name} ${QT_LIBRARIES} ${add_LIBS} )
     if (MSVC)
         set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
