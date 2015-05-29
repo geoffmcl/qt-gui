@@ -113,6 +113,7 @@ if (TIDY_FOUND)
         ${dir}/tg-main.cpp
         ${dir}/tg-dialog.cpp
         ${dir}/tg-config.cpp
+        ${dir}/tg-scraps.cpp
         )
     set( ${name}_HDRS
         ${dir}/tg-dialog.h
