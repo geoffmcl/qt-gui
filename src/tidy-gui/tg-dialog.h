@@ -63,12 +63,15 @@ class DiagnosticsTab : public QWidget
 public:
     DiagnosticsTab( PINFOSTR pinf, QWidget *parent = 0);
 
+
+
+
+
 public slots: // ADD to DiagnosticsTab
     void on_show_info();
     void on_show_warnings();
     void on_show_errorsEd();
     void on_accessibility_checkComb();
-
 
 };
 
@@ -77,6 +80,10 @@ class EncodingTab : public QWidget
     Q_OBJECT
 public:
     EncodingTab( PINFOSTR pinf, QWidget *parent = 0);
+
+
+
+
 
 public slots: // ADD to EncodingTab
     void on_char_encodingComb();
@@ -96,6 +103,10 @@ class MarkupTab : public QWidget
     Q_OBJECT
 public:
     MarkupTab( PINFOSTR pinf, QWidget *parent = 0);
+
+
+
+
 
 public slots: // ADD to MarkupTab
     void on_coerce_endtags();
@@ -138,11 +149,6 @@ public slots: // ADD to MarkupTab
     void on_escape_cdata();
     void on_ncr();
     void on_replace_color();
-    void on_css_prefixEd();
-    void on_new_inline_tagsEd();
-    void on_new_blocklevel_tagsEd();
-    void on_new_empty_tagsEd();
-    void on_new_pre_tagsEd();
     void on_merge_emphasis();
     void on_merge_divs();
     void on_decorate_inferred_ul();
@@ -158,6 +164,10 @@ class MiscTab : public QWidget
 public:
     MiscTab( PINFOSTR pinf, QWidget *parent = 0);
 
+
+
+
+
 public slots: // ADD to MiscTab
     void on_alt_textEd();
     void on_slide_styleEd();
@@ -170,7 +180,11 @@ public slots: // ADD to MiscTab
     void on_gnu_emacs();
     void on_gnu_emacs_fileEd();
     void on_force_output();
-
+    void on_css_prefixEd();
+    void on_new_inline_tagsEd();
+    void on_new_blocklevel_tagsEd();
+    void on_new_empty_tagsEd();
+    void on_new_pre_tagsEd();
 
 };
 
@@ -179,6 +193,10 @@ class PrintTab : public QWidget
     Q_OBJECT
 public:
     PrintTab( PINFOSTR pinf, QWidget *parent = 0);
+
+
+
+
 
 public slots: // ADD to PrintTab
     void on_indent_spacesEd();

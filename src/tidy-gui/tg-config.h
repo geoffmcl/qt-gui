@@ -10,7 +10,7 @@
 #define _TABCONFIG_H_
 #include <tidy.h>
 
-extern bool openTidyLib();  // init library
+extern Bool openTidyLib();  // init library
 extern void closeTidyLib(); // close libray
 
 extern bool getConfigBool( const char *item );
