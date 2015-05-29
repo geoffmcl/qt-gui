@@ -193,6 +193,9 @@ GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
 
     bigEditor = new QTextEdit;
     bigEditor->setReadOnly(true);
+    QSizePolicy sp = bigEditor->sizePolicy();
+    sp.setVerticalStretch(1);
+    bigEditor->setSizePolicy(sp);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
 
