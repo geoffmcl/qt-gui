@@ -4,3 +4,4 @@ build-qt-gui-Desktop-Debug/*
 *.bak
 *~
 temp*
+*.old
