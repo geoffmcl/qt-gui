@@ -63,7 +63,7 @@ QToolButton *outputNameBrowse;
 bool m_fileExists(QString path) 
 {
     QFileInfo checkFile(path);
-    if (checkFile.exists() && checkFile.isFile()) {
+    if (path.size() && checkFile.exists() && checkFile.isFile()) {
         return true;
     }
     return false;
@@ -150,7 +150,7 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     }
 
     QPushButton *buttonShow = new QPushButton();
-	buttonShow->setText("Show");
+	buttonShow->setText("Config");
 
 	buttonBox->addButton(buttonQuit, QDialogButtonBox::ActionRole);
 	buttonBox->addButton(buttonShow, QDialogButtonBox::ActionRole);
@@ -208,8 +208,14 @@ void TabDialog::on_buttonTidy()
     // TODO: This is the REAL WORK 
     // How to pass the file to tidy
     QString file = fileNameEdit->text();
+    file = file.trimmed();
     if (!m_fileExists(file)) {
-        QString msg = QString("Error: File %1 does NOT exist!\nChoose another file.").arg(file);
+        QString msg;
+        if (file.size()) {
+            msg = QString("Error: File '%1' does NOT exist!\nChoose another file.").arg(file);
+        } else {
+            msg = "Error: NO input file!\nChoose a new file.";
+        }
         QMessageBox::warning(this, tr("File Not Found"),msg,QMessageBox::Ok);
         return;
     }
@@ -305,7 +311,7 @@ void GeneralTab::on_fileNameEdit()
     if (m_fileExists(file))
         buttonTidy->setEnabled(true);
     else
-        buttonTidy->setEnabled(true);
+        buttonTidy->setEnabled(false);
 }
 
 // example multiple filter: "Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)"
@@ -348,12 +354,14 @@ OutputTab::OutputTab( PINFOSTR pinf, QWidget *parent )
 
     // try to fiddle with the FONT
     QTextDocument *doc = bigEditor->document();
-    QFont font = doc->defaultFont();
-    font.setFamily("Courier New");
-    font.setStyleHint(QFont::Monospace);
-    font.setFixedPitch(true);
-    font.setPointSize(10);    
-    doc->setDefaultFont(font);
+    if (doc) {
+        QFont font = doc->defaultFont();
+        font.setFamily("Courier New");
+        font.setStyleHint(QFont::Monospace);
+        font.setFixedPitch(true);
+        font.setPointSize(10);    
+        doc->setDefaultFont(font);
+    }
 
     QVBoxLayout *outputLayout = new QVBoxLayout;
     outputLayout->addWidget(bigEditor);

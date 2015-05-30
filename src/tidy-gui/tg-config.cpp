@@ -98,7 +98,7 @@ Bool openTidyLib()
     Bool done = no;
     if (tdoc == 0) {
         tdoc = tidyCreate();
-        done = yes;
+        done = initBuffers();
     }
     return done;
 }
@@ -337,26 +337,38 @@ const char *getConfigPick( const char *item )
 
 typedef struct tagSINKDATA {
     int context;
-}SINKDATA, PSINKDATA;
+    QString text;
+}SINKDATA, *PSINKDATA;
 
 // TIDY_EXPORT int TIDY_CALL         tidyOptSaveSink( TidyDoc tdoc, TidyOutputSink* sink );
 static TidyOutputSink sink;
-static SINKDATA sinkdata;
+// static SINKDATA sinkdata;
 static void TIDY_CALL putByteFunc(void* sinkData, byte bt )
 {
     // do something with the byte
     if (sinkData && bt) {
-        printf("%c",bt);
+        PSINKDATA psd = (PSINKDATA)sinkData;
+        psd->text.append(bt);
+        //printf("%c",bt);
     }
 }
 
 int showConfig()
 {
     int iret = 1;
-    sinkdata.context = 1;
-    printf("Display of configuration items not equal default...\n");
-    if (tidyInitSink( &sink, &sinkdata, &putByteFunc )) {
+    PSINKDATA psd = new SINKDATA;
+    psd->context = 1;
+    psd->text = "";
+    if (tidyInitSink( &sink, psd, &putByteFunc )) {
         iret = tidyOptSaveSink(tdoc, &sink);
+        if (psd->text.size()) {
+            set_errEdit( "Display of configuration items not equal default...\n" ); 
+            append_errEdit( psd->text.toStdString().c_str() );
+        } else {
+            set_errEdit( "All configuration items equal default!\n" ); 
+        }
+    } else {
+        set_errEdit("Oops! internal error: tidyInitSink() FAILED\n");
     }
     return iret;
 }
