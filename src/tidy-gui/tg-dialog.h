@@ -25,6 +25,10 @@ class QTabWidget;
 QT_END_NAMESPACE
 
 extern QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
+extern void set_bigEdit( const char *text );
+extern void append_bigEdit( const char *text );
+extern void set_errEdit( const char *text );
+extern void append_errEdit( const char *text );
 
 class TabDialog : public QDialog
 {
@@ -61,7 +65,13 @@ public slots:
 
 };
 
+class OutputTab : public QWidget
+{
+    Q_OBJECT
+public:
+    OutputTab( PINFOSTR pinf, QWidget *parent = 0);
 
+};
 
 ///////////////////////////////////////////////////////
 

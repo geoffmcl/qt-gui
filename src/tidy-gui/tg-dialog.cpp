@@ -44,7 +44,13 @@ QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
 PINFOSTR m_pinfo;
 
 QPushButton *buttonTidy;
-QTextEdit *bigEditor;
+#ifdef USE_HTML_EDITOR
+QTextEdit *errEditor = 0;
+QTextEdit *bigEditor = 0;
+#else
+QPlainTextEdit *errEditor = 0;
+QPlainTextEdit *bigEditor = 0;
+#endif
 
 QLineEdit *fileNameEdit;
 QToolButton *fileNameBrowse;
@@ -62,6 +68,51 @@ bool m_fileExists(QString path)
     }
     return false;
 }
+
+void set_bigEdit( const char *text )
+{
+    if (bigEditor) {
+#ifdef USE_HTML_EDITOR
+        bigEditor->setText(text);
+#else // #ifdef USE_HTML_EDITOR
+        bigEditor->setPlainText(text);
+#endif // #ifdef USE_HTML_EDITOR y/n
+    }
+}
+
+void append_bigEdit( const char *text )
+{
+    if (bigEditor) {
+#ifdef USE_HTML_EDITOR
+        bigEditor->append(text);
+#else // !#ifdef USE_HTML_EDITOR
+        bigEditor->appendPlainText(text);
+#endif // #ifdef USE_HTML_EDITOR y/n
+    }
+}
+
+void set_errEdit( const char *text )
+{
+    if (errEditor) {
+#ifdef USE_HTML_EDITOR
+        errEditor->setText(text);
+#else // #ifdef USE_HTML_EDITOR
+        errEditor->setPlainText(text);
+#endif // #ifdef USE_HTML_EDITOR y/n
+    }
+}
+
+void append_errEdit( const char *text )
+{
+    if (errEditor) {
+#ifdef USE_HTML_EDITOR
+        errEditor->append(text);
+#else // !#ifdef USE_HTML_EDITOR
+        errEditor->appendPlainText(text);
+#endif // #ifdef USE_HTML_EDITOR y/n
+    }
+}
+
 
 TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     : QDialog(parent)
@@ -122,6 +173,7 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     tabWidget->addTab(new MarkupTab( m_pinfo ), tr("Markup"));
     tabWidget->addTab(new MiscTab( m_pinfo ), tr("Misc"));
     tabWidget->addTab(new PrintTab( m_pinfo ), tr("Print"));
+    tabWidget->addTab(new OutputTab( m_pinfo ), tr("Output"));
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
@@ -170,6 +222,8 @@ void TabDialog::on_buttonTidy()
     }
 
     m_settings->setValue( S_INPUT, file );  // save the last tidied file name
+    runTidyLib( file.toStdString().c_str() );
+
 }
 
 static void check_me(QWidget *w)
@@ -196,12 +250,18 @@ GeneralTab::GeneralTab( PINFOSTR pinf, QWidget *parent)
     outputNameBrowse->setToolTip("Browse for output file");
     outputNameBrowse->setIcon(QIcon(":/icon/save"));
     outputNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    
+#ifdef USE_HTML_EDITOR
+    errEditor = new QTextEdit; // this display html
+#else // #ifdef USE_HTML_EDITOR
+    errEditor = new QPlainTextEdit;
+#endif // #ifdef USE_HTML_EDITOR y/n
+    errEditor->setReadOnly(true);
+    //bigEditor->setTextFormat(Qt::PlainText);
 
-    bigEditor = new QTextEdit;
-    bigEditor->setReadOnly(true);
-    QSizePolicy sp = bigEditor->sizePolicy();
+    QSizePolicy sp = errEditor->sizePolicy();
     sp.setVerticalStretch(1);
-    bigEditor->setSizePolicy(sp);
+    errEditor->setSizePolicy(sp);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
 
@@ -226,7 +286,7 @@ GeneralTab::GeneralTab( PINFOSTR pinf, QWidget *parent)
     outputfileGroup->setLayout(outputfileLay);
     mainLayout->addWidget(outputfileGroup);
 
-    mainLayout->addWidget(bigEditor);
+    mainLayout->addWidget(errEditor);
     mainLayout->addStretch(1);
     setLayout(mainLayout);
 
@@ -275,6 +335,33 @@ void GeneralTab::on_outputNameBrowse()
         outputNameEdit->setText(outputFile);
     }
 }
+
+OutputTab::OutputTab( PINFOSTR pinf, QWidget *parent )
+{
+
+#ifdef USE_HTML_EDITOR
+    bigEditor = new QTextEdit; // this display html
+#else // #ifdef USE_HTML_EDITOR
+    bigEditor = new QPlainTextEdit;
+#endif // #ifdef USE_HTML_EDITOR y/n
+    bigEditor->setReadOnly(true);
+
+    // try to fiddle with the FONT
+    QTextDocument *doc = bigEditor->document();
+    QFont font = doc->defaultFont();
+    font.setFamily("Courier New");
+    font.setStyleHint(QFont::Monospace);
+    font.setFixedPitch(true);
+    font.setPointSize(10);    
+    doc->setDefaultFont(font);
+
+    QVBoxLayout *outputLayout = new QVBoxLayout;
+    outputLayout->addWidget(bigEditor);
+    setLayout(outputLayout);
+
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // **********************************************************************************

@@ -12,6 +12,8 @@
 
 extern Bool openTidyLib();  // init library
 extern void closeTidyLib(); // close libray
+extern void runTidyLib( const char *file );
+
 
 extern bool getConfigBool( const char *item );
 extern int getConfigInt( const char *item );

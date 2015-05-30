@@ -7,10 +7,12 @@
 \*/
 
 #include <QtGlobal> 
+#include <QString>
 #include <stdio.h>
 #include <string.h>
 #include <tidy.h>
 #include <buffio.h>
+#include "tg-dialog.h"
 #include "tg-config.h"
 /*\
  * This module deals with all thing Tidy
@@ -28,22 +30,75 @@
  *
 \*/
 
+/*\
+ * API Sample Code
+#include <tidy.h>;
+#include <buffio.h>;
+#include <stdio.h>;
+#include <errno.h>;
+int main(int argc, char **argv )
+{
+    const char* input = "<title>Hello</title><p>World!";
+    TidyBuffer output = {0};
+    TidyBuffer errbuf = {0};
+    int rc = -1;
+    Bool ok;
+    // Initialize "document"
+    TidyDoc tdoc = tidyCreate();
+    printf( "Tidying:\t%s\n", input );
+    // Convert to XHTML
+    ok = tidyOptSetBool( tdoc, TidyXhtmlOut, yes );  
+    if ( ok )
+        rc = tidySetErrorBuffer( tdoc, &errbuf );    // Capture diagnostics
+    if ( rc >= 0 )
+        rc = tidyParseString( tdoc, input );         // Parse the input
+    if ( rc >= 0 )
+        rc = tidyCleanAndRepair( tdoc );             // Tidy it up!
+    if ( rc >= 0 )
+        rc = tidyRunDiagnostics( tdoc );             // Kvetch
+    if ( rc > 1 )                                    // If error, force output.
+        rc = ( tidyOptSetBool(tdoc, TidyForceOutput, yes) ? rc : -1 );
+    if ( rc >= 0 )
+        rc = tidySaveBuffer( tdoc, &output );        // Pretty Print
+    if ( rc >= 0 )
+    {
+    if ( rc > 0 )
+        printf( "\nDiagnostics:\n\n%s", errbuf.bp );
+    printf( "\nAnd here is the result:\n\n%s", output.bp );
+    }
+    else
+        printf( "A severe error (%d) occurred.\n", rc );
+    tidyBufFree( &output );
+    tidyBufFree( &errbuf );
+    tidyRelease( tdoc );
+    return rc;
+}
+
+\*/
+
 static const char *module = "tg-config";
 
 static TidyDoc tdoc = 0;    // tidyCreate();
 static TidyBuffer output;
 static TidyBuffer errbuf;
 
+Bool initBuffers()
+{
+    Bool done = no;
+    tidyBufInit( &output );
+    tidyBufInit( &errbuf );
+    if (tidySetErrorBuffer( tdoc, &errbuf ) >= 0) {    // Capture diagnostics
+        done = yes;
+    }
+    return done;
+}
+
 Bool openTidyLib()
 {
     Bool done = no;
     if (tdoc == 0) {
         tdoc = tidyCreate();
-        tidyBufInit( &output );
-        tidyBufInit( &errbuf );
-        if (tidySetErrorBuffer( tdoc, &errbuf ) >= 0) {    // Capture diagnostics
-            done = yes;
-        }
+        done = yes;
     }
     return done;
 }
@@ -57,6 +112,52 @@ void closeTidyLib()
     }
     tdoc = 0;
 }
+
+void runTidyLib( const char *file )
+{
+    int rc;
+    initBuffers();
+    rc = tidyParseFile( tdoc, file );
+    if ( rc >= 0 )
+        rc = tidyCleanAndRepair( tdoc );             // Tidy it up!
+    if ( rc >= 0 )
+        rc = tidyRunDiagnostics( tdoc );             // Kvetch
+    if ( rc > 1 )                                    // If error, force output.
+        rc = ( tidyOptSetBool(tdoc, TidyForceOutput, yes) ? rc : -1 );
+    if ( rc >= 0 )
+        rc = tidySaveBuffer( tdoc, &output );        // Pretty Print
+    
+    QString msg = QString("Diagnotics: (%1)\n").arg(rc);
+    if (errbuf.bp) {
+        set_errEdit(msg.toStdString().c_str());
+        append_errEdit( (const char *)errbuf.bp );
+    }
+
+    msg = QString("Results: (%1)\n").arg(rc);
+    if (output.bp) {
+        set_bigEdit( msg.toStdString().c_str() );
+        append_bigEdit( (const char *)output.bp );
+    }
+#if 0 // 0000000000000000000000000000000000000000000
+    if ( rc >= 0 )
+    {
+        if ( rc > 0 )
+        {
+            printf( "\nDiagnostics:\n\n%s", errbuf.bp );
+            printf( "\nAnd here is the result:\n\n%s", output.bp );
+        }
+        else
+        {
+            printf( "A severe error (%d) occurred.\n", rc );
+        }
+    }
+#endif // 0000000000000000000000000000000000000000
+
+}
+
+///////////////////////////////////////////////////////
+// Config stuff
+///////////////////////////////////////////////////////
 
 TidyOptionId getTidyOptionId( const char *item )
 {
