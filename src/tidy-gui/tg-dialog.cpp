@@ -161,6 +161,14 @@ void TabDialog::on_buttonTidy()
         QMessageBox::warning(this, tr("File Not Found"),msg,QMessageBox::Ok);
         return;
     }
+
+    QFileInfo fi(file);
+    QString ff = fi.absoluteFilePath();
+    if (file != ff) {
+        fileNameEdit->setText(ff);
+        file = ff;
+    }
+
     m_settings->setValue( S_INPUT, file );  // save the last tidied file name
 }
 
