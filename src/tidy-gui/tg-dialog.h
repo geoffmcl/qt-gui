@@ -22,13 +22,14 @@ class QFileInfo;
 class QTabWidget;
 QT_END_NAMESPACE
 
+extern QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
+
 class TabDialog : public QDialog
 {
     Q_OBJECT
 
 public:
     TabDialog(const QString &fileName, QWidget *parent = 0);
-    QSettings *settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
     void closeEvent(QCloseEvent *event);
 
 public slots:

@@ -38,8 +38,19 @@
 
 static INFOSTR infostr;
 
+// single sole 'settings'
+QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
+
+
 QPushButton *buttonTidy;
 QTextEdit *bigEditor;
+
+QLineEdit *fileNameEdit;
+QToolButton *fileNameBrowse;
+
+QLineEdit *outputNameEdit;
+QToolButton *outputNameBrowse;
+
 
 // check if file exists and if yes: Is it really a file and not a directory?
 bool m_fileExists(QString path) 
@@ -65,9 +76,9 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     }
     tmp.append("/");
     tmp.append(DEF_INI_FILE);
-    settings = new QSettings(tmp,QSettings::IniFormat,this);
+    m_settings = new QSettings(tmp,QSettings::IniFormat,this);
 
-    restoreGeometry(settings->value("mainWindowGeometry").toByteArray());
+    restoreGeometry(m_settings->value("mainWindowGeometry").toByteArray());
 
     ////////////////////////////////////////////////////////////////////////
     buttonBox = new QDialogButtonBox(this);
@@ -119,7 +130,7 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
 
 void TabDialog::closeEvent(QCloseEvent *event)
 {
-    settings->setValue("mainWindowGeometry", saveGeometry());
+    m_settings->setValue("mainWindowGeometry", saveGeometry());
     //outLog(util_getDateTimestg()+" - Application close",0x8001);
     event->accept();
 }
@@ -139,6 +150,13 @@ void TabDialog::on_buttonTidy()
 {
     // TODO: This is the REAL WORK 
     // How to pass the file to tidy
+    QString file = fileNameEdit->text();
+    if (!m_fileExists(file)) {
+        QString msg = QString("Error: File %1 does NOT exist!\nChoose another file.").arg(file);
+        QMessageBox::warning(this, tr("File Not Found"),msg,QMessageBox::Ok);
+        return;
+    }
+
 }
 
 static void check_me(QWidget *w)
@@ -147,12 +165,6 @@ static void check_me(QWidget *w)
     i = 1;
 
 }
-
-QLineEdit *fileNameEdit;
-QToolButton *fileNameBrowse;
-
-QLineEdit *outputNameEdit;
-QToolButton *outputNameBrowse;
 
 ////////////////////////////////////////////////////////////////
 //// TABS
@@ -216,10 +228,17 @@ void GeneralTab::on_fileNameEdit()
         buttonTidy->setEnabled(true);
 }
 
+// example multiple filter: "Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)"
+static const char* filterSpec =
+    "HTML Files (*.htm *.html);;"
+	"XML Files (*.xml *.xsl);;"
+    "All Files (*)";
+
 void GeneralTab::on_fileNameBrowse()
 {
     QString title = "Get input file name";
-    QString inputFile = QFileDialog::getOpenFileName(this, title, fileNameEdit->text());
+    QString filters = filterSpec;
+    QString inputFile = QFileDialog::getOpenFileName(this, title, fileNameEdit->text(), filters);
     if(inputFile.length() > 0) {
         fileNameEdit->setText(inputFile);
         if (m_fileExists(inputFile))
@@ -229,8 +248,9 @@ void GeneralTab::on_fileNameBrowse()
 
 void GeneralTab::on_outputNameBrowse()
 {
-    QString title = "Get input file name";
-    QString outputFile = QFileDialog::getSaveFileName(this, title, outputNameEdit->text());
+    QString title = "Get output file name";
+    QString filters = filterSpec;
+    QString outputFile = QFileDialog::getSaveFileName(this, title, outputNameEdit->text(), filters);
     if(outputFile.length() > 0) {
         outputNameEdit->setText(outputFile);
     }
@@ -2232,7 +2252,7 @@ MarkupTab::MarkupTab( PINFOSTR pinf, QWidget *parent)
 MiscTab::MiscTab( PINFOSTR pinf, QWidget *parent)
     : QWidget(parent)
 {
-    int i;
+    //int i;
     QString s;
 
     alt_text = new QLabel("alt-text (String)");
