@@ -21,4 +21,4 @@ tabdialog
 qrc_icons.cxx
 tidy-gui2
 *.opensdf
-ReleWithDebInfo
+RelWithDebInfo
