@@ -43,6 +43,7 @@ public slots:
     void onShow();
     void on_buttonTidy();
     void on_about();
+    void on_tab_changed();
 
 private:
     QTabWidget *tabWidget;

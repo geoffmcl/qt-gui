@@ -37,6 +37,7 @@
 #endif
 
 #define S_INPUT "inputfile"
+#define S_LASTTAB "lasttab"
 
 // single sole 'settings'
 QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
@@ -180,6 +181,11 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     tabWidget->addTab(new PrintTab( m_pinfo ), tr("Print"));
     tabWidget->addTab(new OutputTab( m_pinfo ), tr("Output"));
 
+    int index = m_settings->value(S_LASTTAB,"0").toInt();
+    tabWidget->setCurrentIndex(index); // Select Tab Here
+    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(on_tab_changed()));
+
+
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
     mainLayout->addWidget(buttonBox);
@@ -255,6 +261,12 @@ void TabDialog::on_buttonTidy()
     m_settings->setValue( S_INPUT, file );  // save the last tidied file name
     runTidyLib( file.toStdString().c_str() );
 
+}
+
+void TabDialog::on_tab_changed()
+{
+    int ind = tabWidget->currentIndex();
+    m_settings->setValue( S_LASTTAB, ind );  // save the last tab index
 }
 
 static void check_me(QWidget *w)
