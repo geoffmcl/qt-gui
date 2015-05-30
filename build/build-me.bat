@@ -7,6 +7,8 @@
 @set TMPSRC=..
 @set TMP3RD=F:\Projects\software
 @set ADDINST=0
+@REM set TMPDBG=Debug
+@set TMPDBG=RelWithDebInfo
 @REM set BOOST_ROOT=X:\install\msvc100\boost
 @REM if NOT EXIST %BOOST_ROOT%\nul goto NOBOOST
 
@@ -52,9 +54,9 @@
 @cmake %TMPSRC% %TMPOPTS% >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR1
 
-@echo Doing 'cmake --build . --config Debug'
-@echo Doing 'cmake --build . --config Debug'  >> %TMPLOG%
-@cmake --build . --config Debug  >> %TMPLOG% 2>&1
+@echo Doing 'cmake --build . --config %TMPDBG%'
+@echo Doing 'cmake --build . --config %TMPDBG%'  >> %TMPLOG%
+@cmake --build . --config %TMPDBG%  >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR2
 
 @echo Doing: 'cmake --build . --config Release'
