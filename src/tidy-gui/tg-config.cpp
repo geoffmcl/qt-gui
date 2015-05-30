@@ -373,4 +373,361 @@ int showConfig()
     return iret;
 }
 
+///////////////////////////////////////////////////////////////
+/* Description of an option */
+typedef struct {
+    ctmbstr name;  /**< Name */
+    ctmbstr cat;   /**< Category */
+    ctmbstr type;  /**< "String, ... */
+    ctmbstr vals;  /**< Potential values. If NULL, use an external function */
+    ctmbstr def;   /**< default */
+    tmbchar tempdefs[80]; /**< storage for default such as integer */
+    Bool haveVals; /**< if yes, vals is valid */
+} OptionDesc;
+
+typedef void (*OptionFunc)( TidyDoc, TidyOption, OptionDesc * );
+
+#ifdef _MSC_VER
+static const char fmt[] = "%-27.27s %-9.9s  %-40.40s\r\n";
+static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s\r\n";
+#else
+static const char fmt[] = "%-27.27s %-9.9s  %-40.40s\n";
+static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s\n";
+#endif
+static const char ul[]
+        = "=================================================================";
+
+static
+ctmbstr ConfigCategoryName( TidyConfigCategory id )
+{
+    switch( id )
+    {
+    case TidyMarkup:
+        return "markup";
+    case TidyDiagnostics:
+        return "diagnostics";
+    case TidyPrettyPrint:
+        return "print";
+    case TidyEncoding:
+        return "encoding";
+    case TidyMiscellaneous:
+        return "misc";
+    }
+    fprintf(stderr, "Fatal error: impossible value for id='%d'.\n", (int)id);
+    assert(0);
+    abort();
+    return "never_here"; /* only for the compiler warning */
+}
+
+static Bool isAutoBool( TidyOption topt )
+{
+    TidyIterator pos;
+    ctmbstr def;
+
+    if ( tidyOptGetType( topt ) != TidyInteger)
+        return no;
+
+    pos = tidyOptGetPickList( topt );
+    while ( pos )
+    {
+        def = tidyOptGetNextPick( topt, &pos );
+        if (0==strcmp(def,"yes"))
+           return yes;
+    }
+    return no;
+}
+
+/* Create description "d" related to "opt" */
+static
+void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d )
+{
+    TidyOptionId optId = tidyOptGetId( topt );
+    TidyOptionType optTyp = tidyOptGetType( topt );
+
+    d->name = tidyOptGetName( topt );
+    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ) );
+    d->vals = NULL;
+    d->def = NULL;
+    d->haveVals = yes;
+
+    /* Handle special cases first.
+     */
+    switch ( optId )
+    {
+    case TidyDuplicateAttrs:
+    case TidySortAttributes:
+    case TidyNewline:
+    case TidyAccessibilityCheckLevel:
+        d->type = "enum";
+        d->vals = NULL;
+        d->def =
+            optId==TidyNewline ?
+            "<em>Platform dependent</em>"
+            :tidyOptGetCurrPick( tdoc, optId );
+        break;
+
+    case TidyDoctype:
+        d->type = "DocType";
+        d->vals = NULL;
+        {
+            ctmbstr sdef = NULL;
+            sdef = tidyOptGetCurrPick( tdoc, TidyDoctypeMode );
+            if ( !sdef || *sdef == '*' )
+                sdef = tidyOptGetValue( tdoc, TidyDoctype );
+            d->def = sdef;
+        }
+        break;
+
+    case TidyInlineTags:
+    case TidyBlockTags:
+    case TidyEmptyTags:
+    case TidyPreTags:
+        d->type = "Tag names";
+        d->vals = "tagX, tagY, ...";
+        d->def = NULL;
+        break;
+
+    case TidyCharEncoding:
+    case TidyInCharEncoding:
+    case TidyOutCharEncoding:
+        d->type = "Encoding";
+        d->def = tidyOptGetEncName( tdoc, optId );
+        if (!d->def)
+            d->def = "?";
+        d->vals = NULL;
+        break;
+
+        /* General case will handle remaining */
+    default:
+        switch ( optTyp )
+        {
+        case TidyBoolean:
+            d->type = "Boolean";
+            d->vals = "y/n, yes/no, t/f, true/false, 1/0";
+            d->def = tidyOptGetCurrPick( tdoc, optId );
+            break;
+
+        case TidyInteger:
+            if (isAutoBool(topt))
+            {
+                d->type = "AutoBool";
+                d->vals = "auto, y/n, yes/no, t/f, true/false, 1/0";
+                d->def = tidyOptGetCurrPick( tdoc, optId );
+            }
+            else
+            {
+                uint idef;
+                d->type = "Integer";
+                if ( optId == TidyWrapLen )
+                    d->vals = "0 (no wrapping), 1, 2, ...";
+                else
+                    d->vals = "0, 1, 2, ...";
+
+                idef = tidyOptGetInt( tdoc, optId );
+                sprintf(d->tempdefs, "%u", idef);
+                d->def = d->tempdefs;
+            }
+            break;
+
+        case TidyString:
+            d->type = "String";
+            d->vals = NULL;
+            d->haveVals = no;
+            d->def = tidyOptGetValue( tdoc, optId );
+            break;
+        }
+    }
+}
+
+/* Array holding all options. Contains a trailing sentinel. */
+typedef struct {
+    TidyOption topt[N_TIDY_OPTIONS];
+} AllOption_t;
+
+static
+int cmpOpt(const void* e1_, const void *e2_)
+{
+    const TidyOption* e1 = (const TidyOption*)e1_;
+    const TidyOption* e2 = (const TidyOption*)e2_;
+    return strcmp(tidyOptGetName(*e1), tidyOptGetName(*e2));
+}
+
+static
+void getSortedOption( TidyDoc tdoc, AllOption_t *tOption )
+{
+    TidyIterator pos = tidyGetOptionList( tdoc );
+    uint i = 0;
+
+    while ( pos )
+    {
+        TidyOption topt = tidyGetNextOption( tdoc, &pos );
+        tOption->topt[i] = topt;
+        ++i;
+    }
+    tOption->topt[i] = NULL; /* sentinel */
+
+    qsort(tOption->topt,
+          /* Do not sort the sentinel: hence `-1' */
+          sizeof(tOption->topt)/sizeof(tOption->topt[0])-1,
+          sizeof(tOption->topt[0]),
+          cmpOpt);
+}
+
+static void ForEachSortedOption( TidyDoc tdoc, OptionFunc OptionPrint )
+{
+    AllOption_t tOption;
+    const TidyOption *topt;
+
+    getSortedOption( tdoc, &tOption );
+    for( topt = tOption.topt; *topt; ++topt)
+    {
+        OptionDesc d;
+
+        GetOption( tdoc, *topt, &d );
+        (*OptionPrint)( tdoc, *topt, &d );
+    }
+}
+
+//static QString all_opts;
+static char tmp_buf[1024];
+static TidyBuffer cfgbuf;
+
+static
+void printOptionValues( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
+                        OptionDesc *d )
+{
+    char *cp = tmp_buf;
+    uint len;
+    TidyOptionId optId = tidyOptGetId( topt );
+    ctmbstr ro = "";
+    if (tidyOptIsReadOnly( topt )) {
+        ro = "*";
+        return;
+    }
+
+    switch ( optId )
+    {
+    case TidyInlineTags:
+    case TidyBlockTags:
+    case TidyEmptyTags:
+    case TidyPreTags:
+        {
+            TidyIterator pos = tidyOptGetDeclTagList( tdoc );
+            while ( pos )
+            {
+                d->def = tidyOptGetNextDeclTag(tdoc, optId, &pos);
+                if ( pos )
+                {
+                    if ( *d->name ) {
+                        sprintf(cp, valfmt, d->name, d->type, ro, d->def );
+                    } else {
+                        sprintf(cp, fmt, d->name, d->type, d->def );
+                    }
+                    //all_opts.append(cp);
+                    len = strlen(cp);
+                    if (len)
+                        tidyBufAppend( &cfgbuf, cp, len );
+                    d->name = "";
+                    d->type = "";
+                }
+            }
+        }
+        break;
+    case TidyNewline:
+        d->def = tidyOptGetCurrPick( tdoc, optId );
+        break;
+    default:
+        break;
+    }
+
+    /* fix for http://tidy.sf.net/bug/873921 */
+    if ( *d->name || *d->type || (d->def && *d->def) )
+    {
+        if ( ! d->def )
+            d->def = "";
+        if ( *d->name ) {
+            sprintf( cp, valfmt, d->name, d->type, ro, d->def );
+        } else {
+            sprintf( cp, fmt, d->name, d->type, d->def );
+        }
+        //all_opts.append(cp);
+        len = strlen(cp);
+        if (len)
+            tidyBufAppend( &cfgbuf, cp, len );
+
+    } else {
+        printf("WHAT IS THIS!!!\n");
+    }
+}
+
+static
+void printOptionValues2( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
+                        OptionDesc *d )
+{
+    TidyOptionId optId = tidyOptGetId( topt );
+    ctmbstr ro = tidyOptIsReadOnly( topt ) ? "*" : "" ;
+
+    switch ( optId )
+    {
+    case TidyInlineTags:
+    case TidyBlockTags:
+    case TidyEmptyTags:
+    case TidyPreTags:
+        {
+            TidyIterator pos = tidyOptGetDeclTagList( tdoc );
+            while ( pos )
+            {
+                d->def = tidyOptGetNextDeclTag(tdoc, optId, &pos);
+                if ( pos )
+                {
+                    if ( *d->name )
+                        printf( valfmt, d->name, d->type, ro, d->def );
+                    else
+                        printf( fmt, d->name, d->type, d->def );
+                    d->name = "";
+                    d->type = "";
+                }
+            }
+        }
+        break;
+    case TidyNewline:
+        d->def = tidyOptGetCurrPick( tdoc, optId );
+        break;
+    default:
+        break;
+    }
+
+    /* fix for http://tidy.sf.net/bug/873921 */
+    if ( *d->name || *d->type || (d->def && *d->def) )
+    {
+        if ( ! d->def )
+            d->def = "";
+        if ( *d->name )
+            printf( valfmt, d->name, d->type, ro, d->def );
+        else
+            printf( fmt, d->name, d->type, d->def );
+    }
+}
+
+
+static void optionvalues( TidyDoc tdoc )
+{
+    //printf( "\nConfiguration File Settings:\n\n" );
+    //printf( fmt, "Name", "Type", "Current Value" );
+    //printf( fmt, ul, ul, ul );
+    ForEachSortedOption( tdoc, printOptionValues );
+
+    //printf( "\n\nValues marked with an *asterisk are calculated \n"
+    //        "internally by HTML Tidy\n\n" );
+}
+
+const char *get_all_options()
+{
+    //all_opts = "";
+    tidyBufInit( &cfgbuf );
+    optionvalues(tdoc);
+    //return all_opts.toStdString().c_str();
+    return (const char *)cfgbuf.bp;
+}
+
 // eof = tg-conifg.cpp

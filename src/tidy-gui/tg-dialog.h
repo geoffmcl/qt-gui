@@ -12,6 +12,7 @@
 #include <QDialog>
 #include <QSettings>
 #include <QString>
+#include <QTextEdit>
 
 typedef struct tabINFOSTR {
     int count;
@@ -72,6 +73,20 @@ class OutputTab : public QWidget
     Q_OBJECT
 public:
     OutputTab( PINFOSTR pinf, QWidget *parent = 0);
+
+};
+
+class ConfigTab : public QWidget
+{
+    Q_OBJECT
+public:
+    ConfigTab( PINFOSTR pinf, QWidget *parent = 0);
+    QDialogButtonBox *cfgbuttonBox;
+    QTextEdit *cfgEditor;
+
+public slots:
+    void on_buttonSaveAs();
+    void on_buttonLoad();
 
 };
 

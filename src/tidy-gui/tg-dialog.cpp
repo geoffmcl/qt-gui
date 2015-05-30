@@ -114,6 +114,14 @@ void append_errEdit( const char *text )
     }
 }
 
+static GeneralTab *GeneralTabPtr = 0;
+static DiagnosticsTab *DiagnosticsTabPtr = 0;
+static EncodingTab *EncodingTabPtr = 0;
+static MarkupTab *MarkupTabPtr = 0;
+static MiscTab *MiscTabPtr = 0;
+static PrintTab *PrintTabPtr = 0;
+static OutputTab *OutputTabPtr = 0;
+static ConfigTab *ConfigTabPtr = 0;
 
 TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     : QDialog(parent)
@@ -173,13 +181,24 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
 
     // set up the TABS
     tabWidget = new QTabWidget;
-    tabWidget->addTab(new GeneralTab( m_pinfo ), tr("General"));
-    tabWidget->addTab(new DiagnosticsTab( m_pinfo ), tr("Diagnostics"));
-    tabWidget->addTab(new EncodingTab( m_pinfo ), tr("Encoding"));
-    tabWidget->addTab(new MarkupTab( m_pinfo ), tr("Markup"));
-    tabWidget->addTab(new MiscTab( m_pinfo ), tr("Misc"));
-    tabWidget->addTab(new PrintTab( m_pinfo ), tr("Print"));
-    tabWidget->addTab(new OutputTab( m_pinfo ), tr("Output"));
+
+    GeneralTabPtr = new GeneralTab( m_pinfo );
+    DiagnosticsTabPtr = new DiagnosticsTab( m_pinfo );
+    EncodingTabPtr = new EncodingTab( m_pinfo );
+    MarkupTabPtr = new MarkupTab( m_pinfo );
+    MiscTabPtr = new MiscTab( m_pinfo );
+    PrintTabPtr = new PrintTab( m_pinfo );
+    OutputTabPtr = new OutputTab( m_pinfo );
+    ConfigTabPtr = new ConfigTab( m_pinfo );
+
+    tabWidget->addTab(GeneralTabPtr, tr("General"));
+    tabWidget->addTab(DiagnosticsTabPtr, tr("Diagnostics"));
+    tabWidget->addTab(EncodingTabPtr, tr("Encoding"));
+    tabWidget->addTab(MarkupTabPtr, tr("Markup"));
+    tabWidget->addTab(MiscTabPtr, tr("Misc"));
+    tabWidget->addTab(PrintTabPtr, tr("Print"));
+    tabWidget->addTab(OutputTabPtr, tr("Output"));
+    tabWidget->addTab(ConfigTabPtr, tr("Config"));
 
     int index = m_settings->value(S_LASTTAB,"0").toInt();
     tabWidget->setCurrentIndex(index); // Select Tab Here
@@ -406,6 +425,42 @@ OutputTab::OutputTab( PINFOSTR pinf, QWidget *parent )
 
 }
 
+ConfigTab::ConfigTab( PINFOSTR pinf, QWidget *parent )
+{
+    cfgbuttonBox = new QDialogButtonBox(this);
+
+	QPushButton *buttonSaveAs = new QPushButton();
+    // buttonQuit->setIcon(QIcon(":/icons/black"));
+	buttonSaveAs->setText("Save As...");
+	QPushButton *buttonLoad = new QPushButton();
+    // buttonQuit->setIcon(QIcon(":/icons/black"));
+	buttonLoad->setText("Load...");
+
+    cfgbuttonBox->addButton(buttonSaveAs, QDialogButtonBox::ActionRole);
+    cfgbuttonBox->addButton(buttonLoad, QDialogButtonBox::ActionRole);
+
+    cfgEditor = new QTextEdit;
+    QVBoxLayout *configLayout = new QVBoxLayout;
+
+    configLayout->addWidget(cfgbuttonBox);
+    configLayout->addWidget(cfgEditor);
+    setLayout(configLayout);
+
+    connect(buttonSaveAs, SIGNAL(clicked()), this, SLOT(on_buttonSaveAs()));
+    connect(buttonLoad, SIGNAL(clicked()), this, SLOT(on_buttonLoad()));
+
+}
+
+void ConfigTab::on_buttonSaveAs()
+{
+    const char *ccp = get_all_options();
+    cfgEditor->setText(ccp);
+}
+
+void ConfigTab::on_buttonLoad()
+{
+
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
