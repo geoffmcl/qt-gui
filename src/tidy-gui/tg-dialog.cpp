@@ -113,6 +113,8 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     mainLayout->addWidget(tabWidget);
     setLayout(mainLayout);
     setWindowTitle(tr("Tidy GUI 2"));
+    setWindowIcon(QIcon(":/icon/tidyicon"));
+
 }
 
 void TabDialog::closeEvent(QCloseEvent *event)
@@ -146,11 +148,9 @@ static void check_me(QWidget *w)
 
 }
 
-//QLabel *fileNameLabel;
 QLineEdit *fileNameEdit;
 QToolButton *fileNameBrowse;
 
-//QLabel *outputNameLabel;
 QLineEdit *outputNameEdit;
 QToolButton *outputNameBrowse;
 
@@ -163,35 +163,14 @@ GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
     fileNameEdit = new QLineEdit(fileInfo.fileName());
     fileNameBrowse = new QToolButton();
     fileNameBrowse->setToolTip("Browse for input file");
-    //fileNameBrowse->setAutoRaise(true);
-    //fileNameBrowse->setIcon(QIcon(":/icon/folder_open"));
-    //fileNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    //fileNameBrowse->setDisabled(true);
-    //layAeroTopBar->addWidget(buttOpenAeroDir, 0);
-    //connect(buttOpenAeroDir, SIGNAL(clicked()),this, SLOT(on_open_aircraft_path())
+    fileNameBrowse->setIcon(QIcon(":/icon/open"));
+    fileNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
 
-    //outputNameLabel = new QLabel(tr("Output File Name:"));
     outputNameEdit = new QLineEdit("");
     outputNameBrowse = new QToolButton();
     outputNameBrowse->setToolTip("Browse for output file");
     outputNameBrowse->setIcon(QIcon(":/icon/save"));
     outputNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    //QLabel *pathLabel = new QLabel(tr("Path:"));
-    //QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
-    //pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    //QLabel *sizeLabel = new QLabel(tr("Size:"));
-    //qlonglong size = fileInfo.size()/1024;
-    //QLabel *sizeValueLabel = new QLabel(tr("%1 K").arg(size));
-    //sizeValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    //QLabel *lastReadLabel = new QLabel(tr("Last Read:"));
-    //QLabel *lastReadValueLabel = new QLabel(fileInfo.lastRead().toString());
-    //lastReadValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    //QLabel *lastModLabel = new QLabel(tr("Last Modified:"));
-    //QLabel *lastModValueLabel = new QLabel(fileInfo.lastModified().toString());
-    //lastModValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
     bigEditor = new QTextEdit;
     bigEditor->setReadOnly(true);
@@ -212,8 +191,6 @@ GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
     inputfileGroup->setLayout(inputfileLay);
     mainLayout->addWidget(inputfileGroup);
 
-    //mainLayout->addWidget(fileNameLabel);
-    //mainLayout->addWidget(fileNameEdit);
     QGroupBox *outputfileGroup = new QGroupBox("Output File Name");
     QHBoxLayout *outputfileLay = new QHBoxLayout;
 
@@ -224,17 +201,6 @@ GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
     outputfileGroup->setLayout(outputfileLay);
     mainLayout->addWidget(outputfileGroup);
 
-    //mainLayout->addWidget(outputNameLabel);
-    //mainLayout->addWidget(outputNameEdit);
-
-    //mainLayout->addWidget(pathLabel);
-    //mainLayout->addWidget(pathValueLabel);
-    //mainLayout->addWidget(sizeLabel);
-    //mainLayout->addWidget(sizeValueLabel);
-    //mainLayout->addWidget(lastReadLabel);
-    //mainLayout->addWidget(lastReadValueLabel);
-    //mainLayout->addWidget(lastModLabel);
-    //mainLayout->addWidget(lastModValueLabel);
     mainLayout->addWidget(bigEditor);
     mainLayout->addStretch(1);
     setLayout(mainLayout);
