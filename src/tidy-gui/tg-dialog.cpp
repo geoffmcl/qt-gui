@@ -209,28 +209,17 @@ void TabDialog::onShow()
 }
 
 static const char *about =
-    "<h1>This is TidyGUI2 - Ver 2.0.0</h1>\n\n"
+    "<h1>This is TidyGUI2 - v.2.0.0</h1>\n\n"
+    "<p>This Qt GUI provides an interface to HTML Tidy library.</p>\n\n"
+    "<p>HTML Tidy library and console app <a href=\"http://www.html-tidy.org/\">Home Page</a></p> \n\n"
+    "<p>Full free open <a href=\"https://github.com/htacg/tidy-html5\"><b>source</b></a> available.</p>\n\n"
+    "<p>HTML Tidy library is\n"
+    "Copyright <a href=\"http://www.w3.org/\">World Wide Web Consortium</a>,<br>"
+    "and this GUI uses <a href=\"http://www.qt.io/developers/\">Qt</a> runtime libaries</p>\n\n"
     "<p>Original based on Dave Raggett's HTML Tidy<br>\n"
     "but now uses <a href=\"https://www.w3.org/community/htacg/\">HTACG</a> Tidy, ver 5, circa June 2015</p>"
-    "<p>Full free open <a href=\"https://github.com/htacg/tidy-html5\"><b>source</b></a> available.</p>\n\n"
-    "<p>HTML Tidy <a href=\"http://www.html-tidy.org/\">Home Page</a></p> \n\n"
-    "<p>A large part of this software (HTML Tidy library) is\n"
-    "Copyright <a href=\"http://www.w3.org/\">World Wide Web Consortium</a>,"
-    "and uses <a href=\"http://www.qt.io/developers/\">Qt</a> runtime libaries</p>\n\n"
     "<p>HTML Tidy Original "
     "<a href=\"http://www.w3.org/People/Raggett/tidy\">Home</a> page<br> \n\n";
-
-static const char *about2 =
-    "<h1>This is TidyGUI2 - Version 2.0.0</h1>\n\n"
-    "<p>Original based on Dave Raggett's HTML Tidy<br>\n"
-    "but now uses HTACG Tidy, ver 5, circa June 2015</p>"
-    "<p><b>Source: <a href=\"https://github.com/htacg/tidy-html5\">https://github.com/htacg/tidy-html5</a></p>\n\n"
-    "<p>HTML Tidy Home Page:<br><a href=\"http://www.html-tidy.org/\">http://www.html-tidy.org/</a></p> \n\n"
-    "<p>A large part of this software (HTML Tidy library) is\n"
-    "Copyright © 1998-2015 <a href=\"http://www.w3.org/\">World Wide Web Consortium</a></p>\n\n"
-    "<p>HTML Tidy Original Home Page:<br>\n"
-    "<a href=\"http://www.w3.org/People/Raggett/tidy\">http://www.w3.org/People/Raggett/tidy</a><br> \n\n";
-
 
 void TabDialog::on_about()
 {
