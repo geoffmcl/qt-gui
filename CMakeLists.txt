@@ -79,10 +79,12 @@ set( ${name}_SRCS
     ${dir}/main.cpp
     ${dir}/mainwindow.cpp
     ${dir}/mydialog.cpp
+    ${dir}/my-about.cpp
     )
 set( ${name}_HDRS
     ${dir}/mainwindow.h
     ${dir}/mydialog.h
+    ${dir}/my-about.h
     )
 set( ${name}_OTHERS
     ${dir}/app_config.h
@@ -94,7 +96,7 @@ message(STATUS "*** inc_dirs = ${inc_dirs}")
 
 QT4_WRAP_CPP( ${name}_HDRS_MOC ${${name}_HDRS} )
 
-add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_OTHERS} )
+add_executable( ${name} ${${name}_SRCS} ${${name}_HDRS_MOC} ${${name}_HDRS} ${${name}_OTHERS} )
 target_link_libraries( ${name} ${QT_LIBRARIES} )
 if (MSVC)
     set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )

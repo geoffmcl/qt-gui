@@ -43,6 +43,7 @@ public:
     QMenuBar *menuBar;  // = new QMenuBar(this);
     QMenu *menuFile;    // = new QMenu(tr("&File"),this);
     QAction *dialogAct;  // = menuFile->addAction(tr("&Dialog"),this,SLOT(on_dialog()));
+    QAction *dialogAct2;
 
     QAction *exitAct;   // = menuFile->addAction(tr("&Quit",this,SLOT(on_exit())));
     QMenu *menuHelp;    // = new QMenu(tr("&Help"),this);
@@ -62,6 +63,7 @@ public slots:
     void on_time_out();
     void on_about();
     void on_about_qt();
+    void on_about2();
 
 
 };

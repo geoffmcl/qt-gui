@@ -6,6 +6,7 @@
 #include "app_config.h"
 #include "mainwindow.h"
 #include "mydialog.h"
+#include "my-about.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -42,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     //menuFile = new QMenu(tr("&File"),widget);
     menuFile = new QMenu(tr("&File"),menuBar);
     dialogAct = menuFile->addAction(tr("&Dialog"),this,SLOT(on_dialog()));
+    dialogAct2 = menuFile->addAction(tr("D&ialog2"),this,SLOT(on_about2()));
     exitAct = menuFile->addAction(tr("&Quit"),this,SLOT(on_exit()));
     menuBar->addMenu(menuFile);
 
@@ -105,6 +107,19 @@ void MainWindow::on_dialog()
     dialog->exec(); // modal
     delete dialog;
 }
+
+void MainWindow::on_about2()
+{
+    My_About *dialog = new My_About(this);
+    // dialog->show(); // non-modal
+    dialog->setMinimumHeight(300);
+    dialog->setMinimumWidth(400);
+    //dialog->setOpenExternalLink();
+    dialog->adjustSize();
+    dialog->exec(); // modal
+    delete dialog;
+}
+
 
 void MainWindow::on_exit()
 {

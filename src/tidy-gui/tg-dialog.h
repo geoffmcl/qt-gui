@@ -42,6 +42,7 @@ public slots:
     void onQuit();
     void onShow();
     void on_buttonTidy();
+    void on_about();
 
 private:
     QTabWidget *tabWidget;
