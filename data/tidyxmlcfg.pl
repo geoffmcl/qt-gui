@@ -610,6 +610,8 @@ sub show_options($) {
                         ($label =~ /^new-(.+)-tags$/) ) ) {
                     next;   # these have been MOVED to 'encoding' or 'misc'
                     # mainly due to 'markup' has too many options
+                } elsif (($curr eq "misc")&&($label eq "output-file")) {
+                    next; # output file moved to General (Main) Tab
                 }
 
             }
