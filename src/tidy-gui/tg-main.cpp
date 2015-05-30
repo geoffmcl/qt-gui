@@ -34,10 +34,10 @@ int main(int argc, char *argv[])
 
     QString fileName;
 
-    if (argc >= 2)
+    if (argc >= 2) {
+        // TODO: For now ASSUME any command is the input file
         fileName = argv[1];
-    else
-        fileName = ".";
+    }
 
     TabDialog tabdialog(fileName);
 #ifdef Q_OS_SYMBIAN

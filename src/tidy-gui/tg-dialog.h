@@ -11,9 +11,11 @@
 
 #include <QDialog>
 #include <QSettings>
+#include <QString>
 
 typedef struct tabINFOSTR {
     int count;
+    QString input;
 }INFOSTR, *PINFOSTR;
 
 QT_BEGIN_NAMESPACE
@@ -50,7 +52,7 @@ class GeneralTab : public QWidget
     Q_OBJECT
 
 public:
-    GeneralTab(const QFileInfo &fileInfo, QWidget *parent = 0);
+    GeneralTab( PINFOSTR pinf, QWidget *parent = 0);
 
 public slots:
     void on_fileNameBrowse();
