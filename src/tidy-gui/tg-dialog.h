@@ -104,11 +104,6 @@ class DiagnosticsTab : public QWidget
 public:
     DiagnosticsTab( PINFOSTR pinf, QWidget *parent = 0);
 
-
-
-
-
-
 public slots: // ADD to DiagnosticsTab
     void on_show_info();
     void on_show_warnings();
@@ -122,11 +117,6 @@ class EncodingTab : public QWidget
     Q_OBJECT
 public:
     EncodingTab( PINFOSTR pinf, QWidget *parent = 0);
-
-
-
-
-
 
 public slots: // ADD to EncodingTab
     void on_char_encodingComb();
@@ -146,11 +136,6 @@ class MarkupTab : public QWidget
     Q_OBJECT
 public:
     MarkupTab( PINFOSTR pinf, QWidget *parent = 0);
-
-
-
-
-
 
 public slots: // ADD to MarkupTab
     void on_coerce_endtags();
@@ -208,11 +193,6 @@ class MiscTab : public QWidget
 public:
     MiscTab( PINFOSTR pinf, QWidget *parent = 0);
 
-
-
-
-
-
 public slots: // ADD to MiscTab
     void on_alt_textEd();
     void on_slide_styleEd();
@@ -237,11 +217,6 @@ class PrintTab : public QWidget
     Q_OBJECT
 public:
     PrintTab( PINFOSTR pinf, QWidget *parent = 0);
-
-
-
-
-
 
 public slots: // ADD to PrintTab
     void on_indent_spacesEd();
