@@ -378,9 +378,7 @@ static ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name, int coun
     case TidyMiscellaneous:
         return "misc";
     }
-    fprintf(stderr, "\nFatal error: impossible value for id='%d'! name %s. cnt %d\n\n", (int)id,
-        ((name && *name) ? name : "unknown"),
-        count );
+    fprintf(stderr, "\nFatal error: impossible value for id='%d'! count %d on %d\n\n", (int)id, count, N_TIDY_OPTIONS );
     assert(0);
     abort();
     return "never_here"; /* only for the compiler warning */
