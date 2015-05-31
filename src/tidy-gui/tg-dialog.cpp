@@ -123,6 +123,12 @@ static PrintTab *PrintTabPtr = 0;
 static OutputTab *OutputTabPtr = 0;
 static ConfigTab *ConfigTabPtr = 0;
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// INI File location:
+// In Windows: C:\Users\<user>\AppData\Local\geoffair\tidygui2\TidyGUI2.ini
+//          or %LOCALAPPDATA%\geoffair\tidygui2\TidyGUI2.ini
+// In Linux:   $HOME/.local/share/data/geoffair/tidygui2/TidyGUI2.ini
+//////////////////////////////////////////////////////////////////////////////////////////
 TabDialog::TabDialog(const QString &fileName, QWidget *parent)
     : QDialog(parent)
 {
