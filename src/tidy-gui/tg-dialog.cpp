@@ -511,19 +511,19 @@ ConfigTab::ConfigTab( PINFOSTR pinf, QWidget *parent )
 void ConfigTab::on_show_all()
 {
     bool b = show_all->isChecked();
-    m_settings->setValue( S_SHOWALL, b );  // save the last tidied file name
+    m_settings->setValue( S_SHOWALL, b );  // save the show_all checkbox
 }
 
 void ConfigTab::on_show_detailed()
 {
     bool b = show_detailed->isChecked();
-    m_settings->setValue( S_READONLY, b );  // save the last tidied file name
+    m_settings->setValue( S_DETAILED, b );  // save the show_detailed checkbox
 }
 
 void ConfigTab::on_read_only()
 {
     bool b = read_only->isChecked();
-    m_settings->setValue( S_DETAILED, b );  // save the last tidied file name
+    m_settings->setValue( S_READONLY, b );  // save the read_only checkbox
 }
 
 void ConfigTab::on_buttonSaveAs()
