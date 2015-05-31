@@ -364,7 +364,7 @@ static const char ul[]
         = "=================================================================";
 
 static
-ctmbstr ConfigCategoryName( TidyConfigCategory id )
+ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name )
 {
     switch( id )
     {
@@ -379,7 +379,8 @@ ctmbstr ConfigCategoryName( TidyConfigCategory id )
     case TidyMiscellaneous:
         return "misc";
     }
-    fprintf(stderr, "Fatal error: impossible value for id='%d'.\n", (int)id);
+    fprintf(stderr, "\nFatal error: impossible value for id='%d'! name %s.\n\n", (int)id,
+        ((name && *name) ? name : "unknown"));
     assert(0);
     abort();
     return "never_here"; /* only for the compiler warning */
@@ -404,14 +405,13 @@ static Bool isAutoBool( TidyOption topt )
 }
 
 /* Create description "d" related to "opt" */
-static
-void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d )
+static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d )
 {
     TidyOptionId optId = tidyOptGetId( topt );
     TidyOptionType optTyp = tidyOptGetType( topt );
 
     d->name = tidyOptGetName( topt );
-    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ) );
+    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ), d->name );
     d->vals = NULL;
     d->def = NULL;
     d->haveVals = yes;
