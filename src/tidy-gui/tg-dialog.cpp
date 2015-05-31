@@ -158,15 +158,15 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
         buttonTidy->setEnabled(false);
     }
 
-    QPushButton *buttonShow = new QPushButton();
-	buttonShow->setText("Config");
+    //QPushButton *buttonShow = new QPushButton();
+	//buttonShow->setText("Config");
 
     QPushButton *buttonAbout = new QPushButton();
 	buttonAbout->setText("About");
 
 	buttonBox->addButton(buttonQuit, QDialogButtonBox::ActionRole);
 	buttonBox->addButton(buttonAbout, QDialogButtonBox::ActionRole);
-	buttonBox->addButton(buttonShow, QDialogButtonBox::ActionRole);
+	//buttonBox->addButton(buttonShow, QDialogButtonBox::ActionRole);
 	buttonBox->addButton(buttonTidy, QDialogButtonBox::ActionRole);
 	//buttonBox->addButton(buttonQuit,QDialogButtonBox::RejectRole);
 
@@ -175,7 +175,7 @@ TabDialog::TabDialog(const QString &fileName, QWidget *parent)
 
 	//connect(buttonQuit, SIGNAL(clicked()), this, SLOT(reject()));
 	connect(buttonQuit, SIGNAL(clicked()), this, SLOT(onQuit()));
-	connect(buttonShow, SIGNAL(clicked()), this, SLOT(onShow()));
+	//connect(buttonShow, SIGNAL(clicked()), this, SLOT(onShow()));
 	connect(buttonTidy, SIGNAL(clicked()), this, SLOT(on_buttonTidy()));
 	connect(buttonAbout, SIGNAL(clicked()), this, SLOT(on_about()));
 
@@ -230,7 +230,7 @@ void TabDialog::onQuit()
 
 void TabDialog::onShow()
 {
-    showConfig();
+    //showConfig();
 }
 
 static const char *about =
@@ -425,35 +425,112 @@ OutputTab::OutputTab( PINFOSTR pinf, QWidget *parent )
 
 }
 
+#define S_DETAILED "show_detailed"
+#define S_READONLY "read_only"
+#define S_SHOWALL "show_all"
+
+static QCheckBox *show_detailed;
+static QCheckBox *read_only;
+static QCheckBox *show_all;
 ConfigTab::ConfigTab( PINFOSTR pinf, QWidget *parent )
 {
-    cfgbuttonBox = new QDialogButtonBox(this);
 
+    ////////////////////////////////////////////////////////////////
+    // button box
+    cfgbuttonBox = new QDialogButtonBox(this);
+    // button for button box
 	QPushButton *buttonSaveAs = new QPushButton();
     // buttonQuit->setIcon(QIcon(":/icons/black"));
 	buttonSaveAs->setText("Save As...");
 	QPushButton *buttonLoad = new QPushButton();
-    // buttonQuit->setIcon(QIcon(":/icons/black"));
 	buttonLoad->setText("Load...");
-
+	QPushButton *buttonView = new QPushButton();
+	buttonView->setText("View");
+    // add button to the button box
     cfgbuttonBox->addButton(buttonSaveAs, QDialogButtonBox::ActionRole);
     cfgbuttonBox->addButton(buttonLoad, QDialogButtonBox::ActionRole);
+    cfgbuttonBox->addButton(buttonView, QDialogButtonBox::ActionRole);
+    // connect up buttons
+    connect(buttonSaveAs, SIGNAL(clicked()), this, SLOT(on_buttonSaveAs()));
+    connect(buttonLoad, SIGNAL(clicked()), this, SLOT(on_buttonLoad()));
+    connect(buttonView, SIGNAL(clicked()), this, SLOT(on_buttonView()));
 
+    ////////////////////////////////////////////////////////////////
+    // editor to hold view
     cfgEditor = new QTextEdit;
+    cfgEditor->setReadOnly(true);
+    // fiddle with the FONT
+    QTextDocument *doc = cfgEditor->document();
+    if (doc) {
+        QFont font = doc->defaultFont();
+        font.setFamily("Courier New");
+        font.setStyleHint(QFont::Monospace);
+        font.setFixedPitch(true);
+        font.setPointSize(10);    
+        doc->setDefaultFont(font);
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // check boxes for options
+    bool b;
+    show_all = new QCheckBox("Show All");
+    b = m_settings->value(S_SHOWALL,"0").toBool();
+    show_all->setChecked(b);
+    show_all->setToolTip("Show ALL config items");
+    connect(show_all,SIGNAL(clicked()),this,SLOT(on_show_all()));
+
+    show_detailed = new QCheckBox("Detailed");
+    b = m_settings->value(S_DETAILED,"0").toBool();
+    show_detailed->setChecked(b);
+    show_detailed->setToolTip("Add type, if Show All");
+    connect(show_detailed,SIGNAL(clicked()),this,SLOT(on_show_detailed()));
+
+    // TODO: Not yet implmented allowing manual adjustment of shown config
+    read_only = new QCheckBox("Read Only");
+    b = m_settings->value(S_READONLY,"1").toBool();
+    read_only->setChecked(b);
+    read_only->setToolTip("NOT YET IMPLEMENTED");
+    connect(read_only,SIGNAL(clicked()),this,SLOT(on_read_only()));
+
+    QHBoxLayout *configButLay = new QHBoxLayout;
+    configButLay->addWidget(show_detailed);
+    configButLay->addWidget(read_only);
+    configButLay->addWidget(show_all);
+
+    ////////////////////////////////////////////////////////////////
+    // setup the page - vertical layout
     QVBoxLayout *configLayout = new QVBoxLayout;
 
     configLayout->addWidget(cfgbuttonBox);
+    configLayout->addLayout(configButLay);
     configLayout->addWidget(cfgEditor);
     setLayout(configLayout);
 
-    connect(buttonSaveAs, SIGNAL(clicked()), this, SLOT(on_buttonSaveAs()));
-    connect(buttonLoad, SIGNAL(clicked()), this, SLOT(on_buttonLoad()));
+}
 
+void ConfigTab::on_show_all()
+{
+    bool b = show_all->isChecked();
+    m_settings->setValue( S_SHOWALL, b );  // save the last tidied file name
+}
+
+void ConfigTab::on_show_detailed()
+{
+    bool b = show_detailed->isChecked();
+    m_settings->setValue( S_READONLY, b );  // save the last tidied file name
+}
+
+void ConfigTab::on_read_only()
+{
+    bool b = read_only->isChecked();
+    m_settings->setValue( S_DETAILED, b );  // save the last tidied file name
 }
 
 void ConfigTab::on_buttonSaveAs()
 {
-    const char *ccp = get_all_options();
+    bool b = show_detailed->isChecked();
+    bool b2 = show_all->isChecked();
+    const char *ccp = get_all_options(b2,b);
     cfgEditor->setText(ccp);
 }
 
@@ -462,6 +539,13 @@ void ConfigTab::on_buttonLoad()
 
 }
 
+void ConfigTab::on_buttonView()
+{
+    bool b = show_detailed->isChecked();
+    bool b2 = show_all->isChecked();
+    const char *ccp = get_all_options(b2,b);
+    cfgEditor->setText(ccp);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // **********************************************************************************

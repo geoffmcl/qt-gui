@@ -81,12 +81,14 @@ static const char *module = "tg-config";
 static TidyDoc tdoc = 0;    // tidyCreate();
 static TidyBuffer output;
 static TidyBuffer errbuf;
+static TidyBuffer cfgbuf;
 
 Bool initBuffers()
 {
     Bool done = no;
     tidyBufInit( &output );
     tidyBufInit( &errbuf );
+    tidyBufInit( &cfgbuf );
     if (tidySetErrorBuffer( tdoc, &errbuf ) >= 0) {    // Capture diagnostics
         done = yes;
     }
@@ -108,6 +110,7 @@ void closeTidyLib()
     if (tdoc)  { /* called to free hash tables etc. */
         tidyBufFree( &output );
         tidyBufFree( &errbuf );
+        tidyBufFree( &cfgbuf );
         tidyRelease( tdoc );
     }
     tdoc = 0;
@@ -335,44 +338,6 @@ const char *getConfigPick( const char *item )
     return "";
 }
 
-typedef struct tagSINKDATA {
-    int context;
-    QString text;
-}SINKDATA, *PSINKDATA;
-
-// TIDY_EXPORT int TIDY_CALL         tidyOptSaveSink( TidyDoc tdoc, TidyOutputSink* sink );
-static TidyOutputSink sink;
-// static SINKDATA sinkdata;
-static void TIDY_CALL putByteFunc(void* sinkData, byte bt )
-{
-    // do something with the byte
-    if (sinkData && bt) {
-        PSINKDATA psd = (PSINKDATA)sinkData;
-        psd->text.append(bt);
-        //printf("%c",bt);
-    }
-}
-
-int showConfig()
-{
-    int iret = 1;
-    PSINKDATA psd = new SINKDATA;
-    psd->context = 1;
-    psd->text = "";
-    if (tidyInitSink( &sink, psd, &putByteFunc )) {
-        iret = tidyOptSaveSink(tdoc, &sink);
-        if (psd->text.size()) {
-            set_errEdit( "Display of configuration items not equal default...\n" ); 
-            append_errEdit( psd->text.toStdString().c_str() );
-        } else {
-            set_errEdit( "All configuration items equal default!\n" ); 
-        }
-    } else {
-        set_errEdit("Oops! internal error: tidyInitSink() FAILED\n");
-    }
-    return iret;
-}
-
 ///////////////////////////////////////////////////////////////
 /* Description of an option */
 typedef struct {
@@ -387,13 +352,14 @@ typedef struct {
 
 typedef void (*OptionFunc)( TidyDoc, TidyOption, OptionDesc * );
 
-#ifdef _MSC_VER
-static const char fmt[] = "%-27.27s %-9.9s  %-40.40s\r\n";
-static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s\r\n";
+#ifdef _WIN32
+#define MEOL "\r\n"
 #else
-static const char fmt[] = "%-27.27s %-9.9s  %-40.40s\n";
-static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s\n";
+#define MEOL "\n"
 #endif
+
+static const char fmt[] = "%-27.27s %-9.9s  %-40.40s";
+static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s";
 static const char ul[]
         = "=================================================================";
 
@@ -590,7 +556,6 @@ static void ForEachSortedOption( TidyDoc tdoc, OptionFunc OptionPrint )
 
 //static QString all_opts;
 static char tmp_buf[1024];
-static TidyBuffer cfgbuf;
 
 static
 void printOptionValues( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
@@ -624,6 +589,7 @@ void printOptionValues( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
                         sprintf(cp, fmt, d->name, d->type, d->def );
                     }
                     //all_opts.append(cp);
+                    strcat(cp,MEOL);
                     len = strlen(cp);
                     if (len)
                         tidyBufAppend( &cfgbuf, cp, len );
@@ -651,6 +617,7 @@ void printOptionValues( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
             sprintf( cp, fmt, d->name, d->type, d->def );
         }
         //all_opts.append(cp);
+        strcat(cp,MEOL);
         len = strlen(cp);
         if (len)
             tidyBufAppend( &cfgbuf, cp, len );
@@ -664,8 +631,14 @@ static
 void printOptionValues2( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
                         OptionDesc *d )
 {
+    char *cp = tmp_buf;
+    uint len;
     TidyOptionId optId = tidyOptGetId( topt );
-    ctmbstr ro = tidyOptIsReadOnly( topt ) ? "*" : "" ;
+    ctmbstr ro = "";
+    if (tidyOptIsReadOnly( topt )) {
+        ro = "*";
+        return;
+    }
 
     switch ( optId )
     {
@@ -680,10 +653,16 @@ void printOptionValues2( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
                 d->def = tidyOptGetNextDeclTag(tdoc, optId, &pos);
                 if ( pos )
                 {
-                    if ( *d->name )
-                        printf( valfmt, d->name, d->type, ro, d->def );
-                    else
-                        printf( fmt, d->name, d->type, d->def );
+                    if ( *d->name ) {
+                        sprintf(cp, "%s: %s", d->name, d->def );
+                    } else {
+                        sprintf(cp, "%s: %s", d->name, d->def );
+                    }
+                    //all_opts.append(cp);
+                    strcat(cp,MEOL);
+                    len = strlen(cp);
+                    if (len)
+                        tidyBufAppend( &cfgbuf, cp, len );
                     d->name = "";
                     d->type = "";
                 }
@@ -702,31 +681,97 @@ void printOptionValues2( TidyDoc ARG_UNUSED(tdoc), TidyOption topt,
     {
         if ( ! d->def )
             d->def = "";
-        if ( *d->name )
-            printf( valfmt, d->name, d->type, ro, d->def );
-        else
-            printf( fmt, d->name, d->type, d->def );
+        if ( *d->name ) {
+            sprintf( cp, "%s: %s", d->name, d->def );
+        } else {
+            sprintf( cp, "%s: %s", d->name, d->def );
+        }
+        //all_opts.append(cp);
+        strcat(cp,MEOL);
+        len = strlen(cp);
+        if (len)
+            tidyBufAppend( &cfgbuf, cp, len );
+
+    } else {
+        printf("WHAT IS THIS!!!\n");
+    }
+}
+
+typedef struct tagSINKDATA {
+    int context;
+    QString text;
+}SINKDATA, *PSINKDATA;
+
+// TIDY_EXPORT int TIDY_CALL         tidyOptSaveSink( TidyDoc tdoc, TidyOutputSink* sink );
+static TidyOutputSink sink;
+// static SINKDATA sinkdata;
+static void TIDY_CALL putByteFunc(void* sinkData, byte bt )
+{
+    // do something with the byte
+    if (sinkData && bt) {
+        PSINKDATA psd = (PSINKDATA)sinkData;
+        psd->text.append(bt);
+        //printf("%c",bt);
+    }
+}
+
+int showConfig()
+{
+    int iret = 1;
+    PSINKDATA psd = new SINKDATA;
+    psd->context = 1;
+    psd->text = "";
+    if (tidyInitSink( &sink, psd, &putByteFunc )) {
+        iret = tidyOptSaveSink(tdoc, &sink);
+        if (psd->text.size()) {
+            set_errEdit( "Display of configuration items not equal default...\n" ); 
+            append_errEdit( psd->text.toStdString().c_str() );
+        } else {
+            set_errEdit( "All configuration items equal default!\n" ); 
+        }
+    } else {
+        set_errEdit("Oops! internal error: tidyInitSink() FAILED\n");
+    }
+    return iret;
+}
+
+typedef struct tagSINKDATA2 {
+    int context;
+    TidyBuffer *tbp;
+}SINKDATA2, *PSINKDATA2;
+
+static void TIDY_CALL putByteFunc2(void* sinkData, byte bt )
+{
+    // do something with the byte
+    if (sinkData && bt) {
+        PSINKDATA2 psd2 = (PSINKDATA2)sinkData;
+        tidyBufPutByte( psd2->tbp, bt );
     }
 }
 
 
-static void optionvalues( TidyDoc tdoc )
+const char *get_all_options(bool show_all, bool detailed)
 {
-    //printf( "\nConfiguration File Settings:\n\n" );
-    //printf( fmt, "Name", "Type", "Current Value" );
-    //printf( fmt, ul, ul, ul );
-    ForEachSortedOption( tdoc, printOptionValues );
-
-    //printf( "\n\nValues marked with an *asterisk are calculated \n"
-    //        "internally by HTML Tidy\n\n" );
-}
-
-const char *get_all_options()
-{
-    //all_opts = "";
     tidyBufInit( &cfgbuf );
-    optionvalues(tdoc);
-    //return all_opts.toStdString().c_str();
+    if (show_all) {
+        ForEachSortedOption( tdoc, 
+            ( detailed ? printOptionValues : printOptionValues2 ) );
+    } else {
+        int iret;
+        SINKDATA2 sd2;
+        sd2.context = 2;
+        sd2.tbp = &cfgbuf;
+        if (tidyInitSink( &sink, &sd2, &putByteFunc2 )) {
+            iret = tidyOptSaveSink(tdoc, &sink);
+            if ( !(cfgbuf.bp && strlen((const char *)cfgbuf.bp)) ) {
+                const char *err1 = "Oops! All configuration items are equal default!" MEOL;
+                tidyBufAppend(&cfgbuf,(void *)err1,strlen(err1));
+            }
+        } else {
+            const char *err2 = "Oops! internal error: tidyInitSink() FAILED" MEOL;
+            tidyBufAppend(&cfgbuf,(void *)err2,strlen(err2));
+        }
+    }
     return (const char *)cfgbuf.bp;
 }
 

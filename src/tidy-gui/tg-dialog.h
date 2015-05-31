@@ -85,8 +85,12 @@ public:
     QTextEdit *cfgEditor;
 
 public slots:
+    void on_buttonView();
     void on_buttonSaveAs();
     void on_buttonLoad();
+    void on_read_only();
+    void on_show_detailed();
+    void on_show_all();
 
 };
 

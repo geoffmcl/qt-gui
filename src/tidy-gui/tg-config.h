@@ -32,7 +32,7 @@ extern Bool setConfigInt( const char *item, int val );
 
 
 extern int showConfig();
-extern const char *get_all_options();
+extern const char *get_all_options(bool,bool);
 
 
 #endif // #ifndef _TABCONFIG_H_
