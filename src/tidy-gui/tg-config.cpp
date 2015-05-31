@@ -412,7 +412,7 @@ static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d, int count )
     TidyConfigCategory cat = tidyOptGetCategory( topt );
 
     if (cat == (TidyConfigCategory)-1) {
-        fprintf(stderr, "\nUnable to get 'category' for option %d, cnt %d on %d\n", (int)topt, count, N_TIDY_OPTIONS);
+        fprintf(stderr, "\nUnable to get 'category' for option! count %d on %d\n", count, N_TIDY_OPTIONS);
         exit(2);
     }
 
