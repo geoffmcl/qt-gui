@@ -7,8 +7,7 @@
 @set TMPSRC=..
 @set TMP3RD=F:\Projects\software
 @set ADDINST=0
-@REM set TMPDBG=Debug
-@set TMPDBG=RelWithDebInfo
+@set ADDRELWDBG=1
 @REM set BOOST_ROOT=X:\install\msvc100\boost
 @REM if NOT EXIST %BOOST_ROOT%\nul goto NOBOOST
 
@@ -54,10 +53,19 @@
 @cmake %TMPSRC% %TMPOPTS% >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR1
 
-@echo Doing 'cmake --build . --config %TMPDBG%'
-@echo Doing 'cmake --build . --config %TMPDBG%'  >> %TMPLOG%
-@cmake --build . --config %TMPDBG%  >> %TMPLOG% 2>&1
+@echo Doing 'cmake --build . --config Debug'
+@echo Doing 'cmake --build . --config Debug'  >> %TMPLOG%
+@cmake --build . --config Debug  >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR2
+
+@if NOT "%ADDRELWDBG%x" == "1x" goto DNRELDBG
+
+@echo Doing 'cmake --build . --config RelWithDebInfo'
+@echo Doing 'cmake --build . --config RelWithDebInfo'  >> %TMPLOG%
+@cmake --build . --config RelWithDebInfo  >> %TMPLOG% 2>&1
+@if ERRORLEVEL 1 goto ERR6
+
+:DNRELDBG
 
 @echo Doing: 'cmake --build . --config Release'
 @echo Doing: 'cmake --build . --config Release'  >> %TMPLOG%
@@ -120,6 +128,10 @@
 
 :ERR5
 @echo ERROR: Cmake install release FAILED!
+@goto ISERR
+
+:ERR6
+@echo ERROR: Cmake build RelWithDebInfo FAILED!
 @goto ISERR
 
 :NOXD
