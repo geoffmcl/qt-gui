@@ -38,6 +38,8 @@
 
 #define S_INPUT "inputfile"
 #define S_LASTTAB "lasttab"
+#define S_CONFIG "configfile"
+#define S_OUTPUT "outputfile"
 
 // single sole 'settings'
 QSettings *m_settings;    // = new QSettings(tmp,QSettings::IniFormat,this);
@@ -52,12 +54,16 @@ QTextEdit *bigEditor = 0;
 QPlainTextEdit *errEditor = 0;
 QPlainTextEdit *bigEditor = 0;
 #endif
+QTextEdit *cfgEditor;
 
 QLineEdit *fileNameEdit;
 QToolButton *fileNameBrowse;
 
 QLineEdit *outputNameEdit;
 QToolButton *outputNameBrowse;
+
+QLineEdit *configNameEdit;
+QToolButton *configNameBrowse;
 
 
 // check if file exists and if yes: Is it really a file and not a directory?
@@ -318,7 +324,13 @@ GeneralTab::GeneralTab( PINFOSTR pinf, QWidget *parent)
     outputNameBrowse->setToolTip("Browse for output file");
     outputNameBrowse->setIcon(QIcon(":/icon/save"));
     outputNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    
+
+    configNameEdit = new QLineEdit("");
+    configNameBrowse = new QToolButton();
+    configNameBrowse->setToolTip("Browse for config file");
+    configNameBrowse->setIcon(QIcon(":/icon/save"));
+    configNameBrowse->setToolButtonStyle(Qt::ToolButtonIconOnly);
+
 #ifdef USE_HTML_EDITOR
     errEditor = new QTextEdit; // this display html
 #else // #ifdef USE_HTML_EDITOR
@@ -346,13 +358,19 @@ GeneralTab::GeneralTab( PINFOSTR pinf, QWidget *parent)
 
     QGroupBox *outputfileGroup = new QGroupBox("Output File Name");
     QHBoxLayout *outputfileLay = new QHBoxLayout;
-
     outputfileLay->addWidget(outputNameEdit);
     outputfileLay->addWidget(outputNameBrowse);
     connect(outputNameBrowse, SIGNAL(clicked()),this,SLOT(on_outputNameBrowse()));
-
     outputfileGroup->setLayout(outputfileLay);
     mainLayout->addWidget(outputfileGroup);
+
+    QGroupBox *configfileGroup = new QGroupBox("Config File Name");
+    QHBoxLayout *configfileLay = new QHBoxLayout;
+    configfileLay->addWidget(configNameEdit);
+    configfileLay->addWidget(configNameBrowse);
+    connect(configNameBrowse, SIGNAL(clicked()),this,SLOT(on_configNameBrowse()));
+    configfileGroup->setLayout(configfileLay);
+    mainLayout->addWidget(configfileGroup);
 
     mainLayout->addWidget(errEditor);
     mainLayout->addStretch(1);
@@ -365,6 +383,13 @@ GeneralTab::GeneralTab( PINFOSTR pinf, QWidget *parent)
         fileNameEdit->setText( pinf->input );
     }
     on_fileNameEdit();
+
+    QString file;
+    file = m_settings->value(S_OUTPUT,"").toString();
+    outputNameEdit->setText(file);
+    file = m_settings->value(S_CONFIG,"").toString();
+    configNameEdit->setText(file);
+
 }
 
 void GeneralTab::on_fileNameEdit()
@@ -380,6 +405,10 @@ void GeneralTab::on_fileNameEdit()
 static const char* filterSpec =
     "HTML Files (*.htm *.html);;"
 	"XML Files (*.xml *.xsl);;"
+    "All Files (*)";
+static const char* filterSpec2 =
+    "Cfg Files (*.cfg);;"
+    "Text Files (*.txt);;"
     "All Files (*)";
 
 void GeneralTab::on_fileNameBrowse()
@@ -401,8 +430,22 @@ void GeneralTab::on_outputNameBrowse()
     QString outputFile = QFileDialog::getSaveFileName(this, title, outputNameEdit->text(), filters);
     if(outputFile.length() > 0) {
         outputNameEdit->setText(outputFile);
+        m_settings->setValue( S_OUTPUT, outputFile );  // save the output file name
+
     }
 }
+
+void GeneralTab::on_configNameBrowse()
+{
+    QString title = "Get config file name";
+    QString filters = filterSpec2;
+    QString outputFile = QFileDialog::getSaveFileName(this, title, configNameEdit->text(), filters);
+    if(outputFile.length() > 0) {
+        configNameEdit->setText(outputFile);
+        m_settings->setValue( S_CONFIG, outputFile );  // save the config file name
+    }
+}
+
 
 OutputTab::OutputTab( PINFOSTR pinf, QWidget *parent )
 {
@@ -534,15 +577,45 @@ void ConfigTab::on_read_only()
 
 void ConfigTab::on_buttonSaveAs()
 {
-    bool b = show_detailed->isChecked();
+    bool b = false; // show_detailed->isChecked();
     bool b2 = show_all->isChecked();
     const char *ccp = get_all_options(b2,b);
     cfgEditor->setText(ccp);
+    QString msg;
+    //////////////////////////////////////////////////////
+    // what about if NONE
+    if (!b2 && (strncmp("Oops! ", ccp, 6) == 0) ) {
+        msg = ccp;
+        msg.append("Really unable to save NOTHING!" MEOL);
+        msg.append("Check 'Save All' if you want a FULL save" MEOL);
+        QMessageBox::warning(this, tr("Nothing to SAVE!"),msg,QMessageBox::Ok);
+        return;
+    }
+    QString title = "Get output config file name";
+    QString filters = filterSpec2;
+    QString outputFile = QFileDialog::getSaveFileName(this, title, configNameEdit->text(), filters);
+    if(outputFile.length() > 0) {
+        configNameEdit->setText(outputFile);
+        // ok, we are going to write to a file...
+        QFile file( outputFile );
+        if ( file.open(QIODevice::ReadWrite) ) {
+            QTextStream stream( &file );
+            stream << ccp << endl;
+            file.close();
+            m_settings->setValue( S_CONFIG, outputFile );  // save the last tidied file name
+
+        } else {
+            msg = QString("Oops! Unable to open/create file %1!").arg(outputFile);
+            QMessageBox::warning(this, tr("Open File FAILED!"),msg,QMessageBox::Ok);
+        }
+    }
 }
+
+void update_config_items();
 
 void ConfigTab::on_buttonLoad()
 {
-
+    update_config_items();
 }
 
 void ConfigTab::on_buttonView()
@@ -2851,4 +2924,106 @@ PrintTab::PrintTab( PINFOSTR pinf, QWidget *parent)
 }
 
 // END INSERT ///////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////
+// PROOF OF CONCEPT
+// Read and process a CONFIG file, then UPDATE all the parameters
+// C:\Projects\qt\qt-gui\build\default.cfg
+// alt-text:
+// show-info: no
+// indent: yes
+// tidy-mark: no
+
+// structures for objects
+typedef struct tagCHKBXS2 {
+    QCheckBox **p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+    QWidget *w;
+}CHKBXS2, *PCHKBXS2;
+
+typedef struct tagLINED2 {
+    QLineEdit **p;
+    const char *lab;
+    const char *typ;
+    const char *tab;
+    QWidget *w;
+}LINED2, *PLINED2;
+
+static CHKBXS2 chkbxs2[] = {
+    { &show_info, "show-info", "Boolean", "diagnostics", DiagnosticsTabPtr },
+    { &tidy_mark, "tidy-mark", "Boolean", "misc", MiscTabPtr },
+    { &indent, "indent", "AutoBool", "print", PrintTabPtr },
+    { 0, 0, 0, 0 }
+};
+
+static LINED2 lined2[] = {
+    { &alt_textEd, "alt-text", "String", "misc", MiscTabPtr },
+    { 0, 0, 0, 0 }
+};
+
+void update_config_items()
+{
+    QString s;
+    bool b;
+    int i;
+
+    QString name = configNameEdit->text();
+    if (!m_fileExists(name)) {
+        // TODO: dialog FAILED
+        return;
+    }
+    QFile file(name);
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        // TODO: dialog FAILED
+        return;
+    }
+    QTextStream ReadFile(&file);
+
+    QString text = ReadFile.readAll();
+
+    cfgEditor->setText(text);
+
+    // now get Tidy Library to parse CONFIG
+    // tidyLoadConfig( tdoc, argv[2] );
+    i = load_config( name.toStdString().c_str() );
+
+
+    PLINED2 pl2 = &lined2[0];
+    while ( pl2->p ) {
+        if (strcmp(pl2->typ,"String") == 0) {
+            s = getConfigStg(pl2->lab); // like "alt-text"
+            QLineEdit *ple = *pl2->p;
+            ple->setText(s);
+        }
+        pl2++;
+    }
+    PCHKBXS2 pc2 = &chkbxs2[0];
+    while ( pc2->p ) {
+        QCheckBox *pcb = *pc2->p;
+        if (strcmp(pc2->typ,"Boolean") == 0) {
+            if (getConfigBool(pc2->lab)) {
+                b = true;
+            } else {
+                b = false;
+            }
+            pcb->setChecked(b);
+        } else if (strcmp(pc2->typ,"AutoBool") == 0) {
+            i = getConfigABool("indent");
+            if (i == 0) {
+                pcb->setChecked(false);
+                // indent->setCheckState(Qt::Unchecked); // 0
+            } else if (i == 1) {
+                pcb->setChecked(true);
+                // indent->setCheckState(Qt::Checked); // 2
+            } else {
+                pcb->setCheckState(Qt::PartiallyChecked); // 1
+            }
+        }
+        pc2++;
+    }
+}
+
+
 // eof

@@ -10,6 +10,13 @@
 #define _TABCONFIG_H_
 #include <tidy.h>
 
+#if (defined(_WIN32) || defined(WIN32))
+#define MEOL "\r\n"
+#else
+#define MEOL "\n"
+#endif
+
+
 extern Bool openTidyLib();  // init library
 extern void closeTidyLib(); // close libray
 extern void runTidyLib( const char *file );
@@ -33,6 +40,7 @@ extern Bool setConfigInt( const char *item, int val );
 
 extern int showConfig();
 extern const char *get_all_options(bool,bool);
+extern int load_config( const char *file );
 
 
 #endif // #ifndef _TABCONFIG_H_

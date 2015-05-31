@@ -65,6 +65,7 @@ public slots:
     void on_fileNameBrowse();
     void on_fileNameEdit();
     void on_outputNameBrowse();
+    void on_configNameBrowse();
 
 };
 
@@ -82,7 +83,6 @@ class ConfigTab : public QWidget
 public:
     ConfigTab( PINFOSTR pinf, QWidget *parent = 0);
     QDialogButtonBox *cfgbuttonBox;
-    QTextEdit *cfgEditor;
 
 public slots:
     void on_buttonView();

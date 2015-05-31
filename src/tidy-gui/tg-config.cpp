@@ -352,12 +352,6 @@ typedef struct {
 
 typedef void (*OptionFunc)( TidyDoc, TidyOption, OptionDesc * );
 
-#ifdef _WIN32
-#define MEOL "\r\n"
-#else
-#define MEOL "\n"
-#endif
-
 static const char fmt[] = "%-27.27s %-9.9s  %-40.40s";
 static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s";
 static const char ul[]
@@ -786,5 +780,18 @@ const char *get_all_options(bool show_all, bool detailed)
     }
     return (const char *)cfgbuf.bp;
 }
+
+
+int load_config( const char *file )
+{
+    int iret = 0;
+
+    tidyBufClear( &errbuf );
+    // if (tidySetErrorBuffer( tdoc, &errbuf ) >= 0) {    // Capture diagnostics
+
+    iret = tidyLoadConfig( tdoc, file );
+    return iret;
+}
+
 
 // eof = tg-conifg.cpp
