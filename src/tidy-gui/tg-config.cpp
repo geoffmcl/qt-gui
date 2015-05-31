@@ -417,9 +417,8 @@ static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d, int count )
     }
 
     d->name = tidyOptGetName( topt );
-    d->cat = ConfigCategoryName( cat, 
-        ((d->name && *d->name) ? d->name : "NONAME!"),
-        count );
+    d->cat = ConfigCategoryName( cat, d->name, count );
+//        ((d->name && *d->name) ? d->name : "NONAME!"), count );
     d->vals = NULL;
     d->def = NULL;
     d->haveVals = yes;
@@ -514,9 +513,9 @@ static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d, int count )
 }
 
 /* Array holding all options. Contains a trailing sentinel. */
-typedef struct {
+typedef struct tagALLOPTIONS {
     TidyOption topt[N_TIDY_OPTIONS];
-} AllOption_t;
+} ALLOPTIONS, *PALLOPTIONS;
 
 static
 int cmpOpt(const void* e1_, const void *e2_)
@@ -527,7 +526,7 @@ int cmpOpt(const void* e1_, const void *e2_)
 }
 
 static
-void getSortedOption( TidyDoc tdoc, AllOption_t *tOption )
+void getSortedOption( TidyDoc tdoc, PALLOPTIONS tOption )
 {
     TidyIterator pos = tidyGetOptionList( tdoc );
     uint i = 0;
@@ -540,16 +539,17 @@ void getSortedOption( TidyDoc tdoc, AllOption_t *tOption )
     }
     tOption->topt[i] = NULL; /* sentinel */
 
-    qsort(tOption->topt,
-          /* Do not sort the sentinel: hence `-1' */
-          sizeof(tOption->topt)/sizeof(tOption->topt[0])-1,
-          sizeof(tOption->topt[0]),
-          cmpOpt);
+    /* Do not sort the sentinel: hence `-1' */
+    size_t one = sizeof(tOption->topt[0]);
+    size_t all = sizeof(tOption->topt);
+    size_t len = (all/one) - 1;
+    qsort(tOption->topt, len, one, cmpOpt);
+
 }
 
 static void ForEachSortedOption( TidyDoc tdoc, OptionFunc OptionPrint )
 {
-    AllOption_t tOption;
+    ALLOPTIONS tOption;
     const TidyOption *topt;
     int count = 0;
 
