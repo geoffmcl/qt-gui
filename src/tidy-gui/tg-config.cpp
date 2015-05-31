@@ -363,8 +363,7 @@ static const char valfmt[] = "%-27.27s %-9.9s %-1.1s%-39.39s";
 static const char ul[]
         = "=================================================================";
 
-static
-ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name, int count )
+static ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name, int count )
 {
     switch( id )
     {
@@ -410,10 +409,16 @@ static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d, int count )
 {
     TidyOptionId optId = tidyOptGetId( topt );
     TidyOptionType optTyp = tidyOptGetType( topt );
+    TidyConfigCategory cat = tidyOptGetCategory( topt );
+
+    if (cat == (TidyConfigCategory)-1) {
+        fprintf(stderr, "\nUnable to get 'category' for option %d, cnt %d on %d\n", (int)topt, count, N_TIDY_OPTIONS);
+        exit(2);
+    }
 
     d->name = tidyOptGetName( topt );
-    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ), 
-        (d->name ? d->name : "no NAME!"),
+    d->cat = ConfigCategoryName( cat, 
+        ((d->name && *d->name) ? d->name : "NONAME!"),
         count );
     d->vals = NULL;
     d->def = NULL;
