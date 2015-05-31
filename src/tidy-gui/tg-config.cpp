@@ -552,12 +552,17 @@ static void ForEachSortedOption( TidyDoc tdoc, OptionFunc OptionPrint )
     int count = 0;
 
     getSortedOption( tdoc, &tOption );
+
     for( topt = tOption.topt; *topt; ++topt)
     {
         OptionDesc d;
         count++;
         GetOption( tdoc, *topt, &d, count );
         (*OptionPrint)( tdoc, *topt, &d );
+        if (count >= N_TIDY_OPTIONS) {
+            // actually should NOT get here, but seem to in unix????
+            break;
+        }
     }
 }
 
