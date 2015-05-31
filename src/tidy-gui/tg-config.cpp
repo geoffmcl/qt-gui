@@ -364,7 +364,7 @@ static const char ul[]
         = "=================================================================";
 
 static
-ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name )
+ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name, int count )
 {
     switch( id )
     {
@@ -379,8 +379,9 @@ ctmbstr ConfigCategoryName( TidyConfigCategory id, ctmbstr name )
     case TidyMiscellaneous:
         return "misc";
     }
-    fprintf(stderr, "\nFatal error: impossible value for id='%d'! name %s.\n\n", (int)id,
-        ((name && *name) ? name : "unknown"));
+    fprintf(stderr, "\nFatal error: impossible value for id='%d'! name %s. cnt %d\n\n", (int)id,
+        ((name && *name) ? name : "unknown"),
+        count );
     assert(0);
     abort();
     return "never_here"; /* only for the compiler warning */
@@ -405,13 +406,15 @@ static Bool isAutoBool( TidyOption topt )
 }
 
 /* Create description "d" related to "opt" */
-static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d )
+static void GetOption( TidyDoc tdoc, TidyOption topt, OptionDesc *d, int count )
 {
     TidyOptionId optId = tidyOptGetId( topt );
     TidyOptionType optTyp = tidyOptGetType( topt );
 
     d->name = tidyOptGetName( topt );
-    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ), d->name );
+    d->cat = ConfigCategoryName( tidyOptGetCategory( topt ), 
+        (d->name ? d->name : "no NAME!"),
+        count );
     d->vals = NULL;
     d->def = NULL;
     d->haveVals = yes;
@@ -543,13 +546,14 @@ static void ForEachSortedOption( TidyDoc tdoc, OptionFunc OptionPrint )
 {
     AllOption_t tOption;
     const TidyOption *topt;
+    int count = 0;
 
     getSortedOption( tdoc, &tOption );
     for( topt = tOption.topt; *topt; ++topt)
     {
         OptionDesc d;
-
-        GetOption( tdoc, *topt, &d );
+        count++;
+        GetOption( tdoc, *topt, &d, count );
         (*OptionPrint)( tdoc, *topt, &d );
     }
 }
