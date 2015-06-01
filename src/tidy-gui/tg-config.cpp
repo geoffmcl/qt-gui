@@ -95,6 +95,38 @@ Bool initBuffers()
     return done;
 }
 
+void clearBuffers( int flag )
+{
+    if ((flag == 0) || (flag & 1))
+        tidyBufClear( &errbuf );
+    if ((flag == 0) || (flag & 2))
+        tidyBufClear( &output );
+    if ((flag == 0) || (flag & 4))
+        tidyBufClear( &cfgbuf );
+}
+
+char *getErrBufText() 
+{
+    if (errbuf.bp && *errbuf.bp)
+        return (char *)errbuf.bp;
+    return 0;
+}
+
+char *getOutBufText() 
+{
+    if (output.bp && *output.bp)
+        return (char *)output.bp;
+    return 0;
+}
+
+char *getCfgBufText() 
+{
+    if (cfgbuf.bp && *cfgbuf.bp)
+        return (char *)cfgbuf.bp;
+    return 0;
+}
+
+
 Bool openTidyLib()
 {
     Bool done = no;
@@ -107,11 +139,16 @@ Bool openTidyLib()
 
 void closeTidyLib()
 {
-    if (tdoc)  { /* called to free hash tables etc. */
+    if (tdoc)  {
+
+        clearBuffers(); // release buffer memory - maybe tidyBufFree() also does this???
+
+        // free buffer memory
         tidyBufFree( &output );
         tidyBufFree( &errbuf );
         tidyBufFree( &cfgbuf );
-        tidyRelease( tdoc );
+
+        tidyRelease( tdoc ); /* called to free hash tables etc. */
     }
     tdoc = 0;
 }
@@ -119,7 +156,9 @@ void closeTidyLib()
 void runTidyLib( const char *file )
 {
     int rc;
-    initBuffers();
+
+    clearBuffers();
+
     rc = tidyParseFile( tdoc, file );
     if ( rc >= 0 )
         rc = tidyCleanAndRepair( tdoc );             // Tidy it up!
@@ -130,32 +169,17 @@ void runTidyLib( const char *file )
     if ( rc >= 0 )
         rc = tidySaveBuffer( tdoc, &output );        // Pretty Print
     
-    QString msg = QString("Diagnotics: (%1)\n").arg(rc);
+    QString msg = QString("Diagnotics: file %1 (%2)\n").arg(file, QString::number(rc));
     if (errbuf.bp) {
         set_errEdit(msg.toStdString().c_str());
         append_errEdit( (const char *)errbuf.bp );
     }
 
-    msg = QString("Results: (%1)\n").arg(rc);
+    msg = QString("Results: file %1 (%2)\n").arg(file,QString::number(rc));
     if (output.bp) {
         set_bigEdit( msg.toStdString().c_str() );
         append_bigEdit( (const char *)output.bp );
     }
-#if 0 // 0000000000000000000000000000000000000000000
-    if ( rc >= 0 )
-    {
-        if ( rc > 0 )
-        {
-            printf( "\nDiagnostics:\n\n%s", errbuf.bp );
-            printf( "\nAnd here is the result:\n\n%s", output.bp );
-        }
-        else
-        {
-            printf( "A severe error (%d) occurred.\n", rc );
-        }
-    }
-#endif // 0000000000000000000000000000000000000000
-
 }
 
 ///////////////////////////////////////////////////////

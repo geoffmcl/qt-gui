@@ -83,6 +83,7 @@ class ConfigTab : public QWidget
 public:
     ConfigTab( PINFOSTR pinf, QWidget *parent = 0);
     QDialogButtonBox *cfgbuttonBox;
+    void do_configUpdate();
 
 public slots:
     void on_buttonView();
