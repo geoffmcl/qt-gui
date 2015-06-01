@@ -35,14 +35,17 @@ my $in_file3 = '';
 my $verbosity = 0;
 my $out_file = '';
 
-my $tmp_out = $temp_dir.$PATH_SEP."temptg.h";
+my $write_tmp_file = 0;
+my $tmp_out2 = $temp_dir.$PATH_SEP."temptg.h";
+my $tmp_out3 = $temp_dir.$PATH_SEP."temptg.cpp";
 
 
 # ### DEBUG ###
 my $debug_on = 1;
-my $def_file = 'C:\Projects\qt\qt-gui\data\tidycfg.xml';
+my $def_file = 'C:\Projects\qt\qt-gui\src\tidy-gui\data\tidycfg.xml';
 my $def_file2 = 'C:\Projects\qt\qt-gui\src\tidy-gui\tg-dialog.h';
 my $def_file3 = 'C:\Projects\qt\qt-gui\src\tidy-gui\tg-dialog.cpp';
+
 
 ### program variables
 my @warnings = ();
@@ -134,7 +137,7 @@ sub set_header_slots($$) {
     my $txt = '';
     if ($lasthead ne $name) {
         $lasthead = $name;
-        $txt .= "\npublic slots: // ADD to $name\n";
+        $txt .= "public slots: // ADD to $name\n";
     }
     $txt .= "    void on_$token();\n";
     $addhead .= $txt;
@@ -429,28 +432,28 @@ sub get_strucs() {
 
 // structures for objects
 typedef struct tagCHKBXS {
-    QCheckBox *p;
+    QCheckBox **p;  // pointer to pointer
     const char *lab;
     const char *typ;
     const char *tab;
 }CHKBXS, *PCHKBXS;
 
 typedef struct tagLABEL {
-    QLabel *p;
+    QLabel **p;  // pointer to pointer
     const char *lab;
     const char *typ;
     const char *tab;
 }LABEL, *PLABEL;
 
 typedef struct tagLINED {
-    QLineEdit *p;
+    QLineEdit **p;   // pointer to pointer
     const char *lab;
     const char *typ;
     const char *tab;
 }LINED, *PLINED;
 
 typedef struct tagCOMBOS {
-    QComboBox *p;
+    QComboBox **p;  // pointer to pointer
     const char *lab;
     const char *typ;
     const char *tab;
@@ -495,11 +498,14 @@ sub reset_in_file3($) {
         $line = $lines[$i];
         $nline .= $line;
     }
-    ##write2file($nline,$tmp_out);
-    ##prt("New contents of $inf\nwritten to $tmp_out\n");
-    rename_2_old_bak($inf);
-    write2file($nline,$inf);
-    prt("New contents of $inf written\n");
+    if ($write_tmp_file) {
+        write2file($nline,$tmp_out3);
+        prt("New contents of $inf\nwritten to $tmp_out3\n");
+    } else {
+        rename_2_old_bak($inf);
+        write2file($nline,$inf);
+        prt("New contents of $inf written\n");
+    }
 }
 
 
@@ -543,9 +549,14 @@ sub reset_in_file2() {
     }
     $line = join("\n",@nlines);
     $line .= "\n";
-    rename_2_old_bak($inf);
-    write2file($line,$inf);
-    prt("New contents of $inf written\n");
+    if ($write_tmp_file) {
+        write2file($line,$tmp_out2);
+        prt("New contents of $inf\nwritten to $tmp_out2\n");
+    } else {
+        rename_2_old_bak($inf);
+        write2file($line,$inf);
+        prt("New contents of $inf written\n");
+    }
 
 }
 
@@ -712,18 +723,37 @@ sub show_options($) {
     $newcpp .= $cppstatic;
     # ==================
     # CHKBXS
+    my %h = ();
+    foreach $roa (@chkboxes) {
+        $type  = ${$roa}[2];
+        $h{$type} = 1;
+    }
+    @arr = sort keys %h;
     $name = "\n";
+    $name .= "// CheckBox types: ".join(" ",@arr)."\n";
     $name .= "static CHKBXS chkbxs[] = {\n";
     foreach $roa (@chkboxes) {
         $token = ${$roa}[0];
         $label = ${$roa}[1];
         $type  = ${$roa}[2];
         $class = ${$roa}[3];
-        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+        $name .= "    { &$token, \"$label\", \"$type\", \"$class\" },\n";
     }
-    $name =~ s/,\n$/\n/g;
+    $name .= "    // LAST ENTRY\n";
+    $name .= "    { 0, 0, 0, 0 }\n";
     $name .= "};\n";
     # LABEL
+    %h  = ();
+    foreach $roa (@labels) {
+        $type  = ${$roa}[2];
+        $h{$type} = 1;
+    }
+    @arr = sort keys %h;
+    $name .= "\n";
+    $name .= "// Label types: ";
+    foreach $type (@arr) {
+        $name .= "'$type' ";
+    }
     $name .= "\n";
     $name .= "static LABEL label[] = {\n";
     foreach $roa (@labels) {
@@ -731,11 +761,23 @@ sub show_options($) {
         $label = ${$roa}[1];
         $type  = ${$roa}[2];
         $class = ${$roa}[3];
-        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+        $name .= "    { &$token, \"$label\", \"$type\", \"$class\" },\n";
     }
-    $name =~ s/,\n$/\n/g;
+    $name .= "    // LAST ENTRY\n";
+    $name .= "    { 0, 0, 0, 0 }\n";
     $name .= "};\n";
     # LINED 
+    %h = ();
+    foreach $roa (@editboxes) {
+        $type  = ${$roa}[2];
+        $h{$type} = 1;
+    }
+    @arr = sort keys %h;
+    $name .= "\n";
+    $name .= "// LineEdit types: ";
+    foreach $type (@arr) {
+        $name .= "'$type' ";
+    }
     $name .= "\n";
     $name .= "static LINED lined[] = {\n";
     foreach $roa (@editboxes) {
@@ -743,11 +785,23 @@ sub show_options($) {
         $label = ${$roa}[1];
         $type  = ${$roa}[2];
         $class = ${$roa}[3];
-        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+        $name .= "    { &$token, \"$label\", \"$type\", \"$class\" },\n";
     }
-    $name =~ s/,\n$/\n/g;
+    $name .= "    // LAST ENTRY\n";
+    $name .= "    { 0, 0, 0, 0 }\n";
     $name .= "};\n";
     # COMBOS
+    %h = ();
+    foreach $roa (@combos) {
+        $type  = ${$roa}[2];
+        $h{$type} = 1;
+    }
+    @arr = sort keys %h;
+    $name .= "\n";
+    $name .= "// ComboBox types: ";
+    foreach $type (@arr) {
+        $name .= "'$type' ";
+    }
     $name .= "\n";
     $name .= "static COMBOS combos[] = {\n";
     foreach $roa (@combos) {
@@ -755,9 +809,10 @@ sub show_options($) {
         $label = ${$roa}[1];
         $type  = ${$roa}[2];
         $class = ${$roa}[3];
-        $name .= "    { $token, \"$label\", \"$type\", \"$class\" },\n";
+        $name .= "    { &$token, \"$label\", \"$type\", \"$class\" },\n";
     }
-    $name =~ s/,\n$/\n/g;
+    $name .= "    // LAST ENTRY\n";
+    $name .= "    { 0, 0, 0, 0 }\n";
     $name .= "};\n";
     prt($name);
     $newcpp .= $name;
